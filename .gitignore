@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+yolo26s.pt
+lp_models/models/craft_mlt_25k.pth
+results/
+live_log/
