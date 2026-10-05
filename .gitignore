@@ -1,1 +1,5 @@
 /data/
+.venv/
+reports/
+__pycache__/
+/SPASIBA 번호판 OCR 팀 공유 데이터와 할 일.pdf

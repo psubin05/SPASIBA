@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPASIBA 웹캠 번호판 OCR</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 920px; margin: 24px auto; padding: 0 16px; color: #18212d; }
+    h1 { font-size: 1.5rem; }
+    .preview { position: relative; max-width: 880px; background: #111; border-radius: 12px; overflow: hidden; }
+    video { display: block; width: 100%; height: auto; }
+    .guide { position: absolute; left: 10%; top: 35%; width: 80%; height: 30%; border: 3px solid #46e3a6; border-radius: 8px; box-sizing: border-box; pointer-events: none; }
+    button { margin: 14px 8px 14px 0; padding: 10px 16px; border: 0; border-radius: 8px; background: #1764b0; color: white; cursor: pointer; font: inherit; }
+    button:disabled { background: #9da8b2; cursor: default; }
+    select { margin: 14px 8px 14px 0; padding: 9px; max-width: 100%; font: inherit; }
+    #plate { font-size: 2rem; font-weight: 700; min-height: 2.5rem; }
+    #status, #raw { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>웹캠 번호판 OCR</h1>
+  <p>번호판 전체가 초록색 상자 안에 크게 보이도록 비춰 주세요. 조명이 밝고 글자가 또렷할수록 잘 읽힙니다.</p>
+  <div class="preview"><video id="video" autoplay playsinline muted></video><div class="guide"></div></div>
+  <button id="start">카메라 시작</button><button id="stop" disabled>중지</button>
+  <label for="cameraSelect">카메라</label>
+  <select id="cameraSelect" disabled><option>카메라 권한을 허용해 주세요</option></select>
+  <div id="plate" aria-live="polite">카메라를 시작해 주세요</div>
+  <div id="status"></div>
+  <div id="raw"></div>
+  <canvas id="canvas" hidden></canvas>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const plate = document.getElementById('plate');
+    const status = document.getElementById('status');
+    const raw = document.getElementById('raw');
+    const start = document.getElementById('start');
+    const stop = document.getElementById('stop');
+    const cameraSelect = document.getElementById('cameraSelect');
+    let stream = null;
+    let running = false;
+    let timer = null;
+    let runId = 0;
+
+    async function scan(id) {
+      if (!running || id !== runId) return;
+      try {
+        if (!video.videoWidth) return;
+        const w = video.videoWidth, h = video.videoHeight;
+        const sx = Math.round(w * 0.1), sy = Math.round(h * 0.35);
+        const sw = Math.round(w * 0.8), sh = Math.round(h * 0.3);
+        const scale = Math.min(1, 960 / sw);
+        canvas.width = Math.round(sw * scale);
+        canvas.height = Math.round(sh * scale);
+        canvas.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+        if (!running || id !== runId) return;
+        const response = await fetch('/recognize', {method: 'POST', headers: {'Content-Type': 'image/jpeg'}, body: blob});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'OCR 오류');
+        if (!running || id !== runId) return;
+        plate.textContent = result.plate || '번호판 미인식';
+        status.textContent = result.plate ? `인식 신뢰도(최저 글자 줄): ${(result.confidence * 100).toFixed(1)}%` : '번호판을 상자 안에 더 크게 비춰 주세요';
+        raw.textContent = result.raw ? `원본 OCR: ${result.raw}` : '';
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        if (running && id === runId) timer = setTimeout(() => scan(id), 700);
+      }
+    }
+
+    async function updateCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === 'videoinput');
+      const activeId = stream?.getVideoTracks()[0]?.getSettings().deviceId;
+      cameraSelect.replaceChildren(...cameras.map((camera, index) => {
+        const option = document.createElement('option');
+        option.value = camera.deviceId;
+        option.textContent = camera.label || `카메라 ${index + 1}`;
+        return option;
+      }));
+      cameraSelect.disabled = cameras.length < 2;
+      if (activeId && cameras.some(camera => camera.deviceId === activeId)) {
+        cameraSelect.value = activeId;
+      }
+    }
+
+    function stopCamera() {
+      running = false;
+      runId++;
+      clearTimeout(timer);
+      stream?.getTracks().forEach(track => track.stop());
+      stream = null;
+      video.srcObject = null;
+      start.disabled = false;
+      stop.disabled = true;
+    }
+
+    async function openCamera(deviceId) {
+      stopCamera();
+      start.disabled = true;
+      try {
+        const videoOptions = {width: {ideal: 1280}, height: {ideal: 720}};
+        if (deviceId) videoOptions.deviceId = {exact: deviceId};
+        stream = await navigator.mediaDevices.getUserMedia({video: videoOptions, audio: false});
+        video.srcObject = stream;
+        await video.play();
+        running = true;
+        start.disabled = true;
+        stop.disabled = false;
+        plate.textContent = '번호판을 비춰 주세요';
+        status.textContent = '';
+        await updateCameras();
+        scan(runId);
+      } catch (error) {
+        stopCamera();
+        status.textContent = `카메라를 열 수 없습니다: ${error.message}`;
+      }
+    }
+
+    start.onclick = () => openCamera(cameraSelect.disabled ? null : cameraSelect.value);
+    cameraSelect.onchange = () => openCamera(cameraSelect.value);
+    stop.onclick = () => {
+      stopCamera();
+      status.textContent = '카메라 중지';
+    };
+    navigator.mediaDevices?.addEventListener('devicechange', () => updateCameras().catch(() => {}));
+  </script>
+</body>
+</html>
