@@ -1,0 +1,36 @@
+device=cuda NVIDIA GeForce RTX 3070 Ti Laptop GPU
+문자 수=67 (+blank)  학습 24000/epoch  검증 2000
+파라미터 5.3M
+/home/misys/aiot/plate_ocr/src/train.py:162: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+ep  1/14  loss 5.4871  완전일치  0.00%  글자정확도  0.00%  (0.6분)
+ep  2/14  loss 2.3897  완전일치 26.60%  글자정확도 78.35%  (1.2분)
+ep  3/14  loss 0.4667  완전일치 63.40%  글자정확도 85.17%  (1.9분)
+ep  4/14  loss 0.3501  완전일치 68.65%  글자정확도 86.50%  (2.5분)
+ep  5/14  loss 0.3389  완전일치 68.35%  글자정확도 86.52%  (3.2분)
+ep  6/14  loss 0.3471  완전일치 65.45%  글자정확도 86.24%  (3.9분)
+ep  7/14  loss 0.3398  완전일치 68.70%  글자정확도 86.87%  (4.5분)
+ep  8/14  loss 0.3287  완전일치 68.85%  글자정확도 86.87%  (5.2분)
+ep  9/14  loss 0.3251  완전일치 68.80%  글자정확도 86.81%  (5.9분)
+ep 10/14  loss 0.3265  완전일치 68.80%  글자정확도 86.81%  (6.5분)
+ep 11/14  loss 0.3299  완전일치 68.80%  글자정확도 86.84%  (7.2분)
+ep 12/14  loss 0.3264  완전일치 68.85%  글자정확도 87.08%  (7.9분)
+ep 13/14  loss 0.3276  완전일치 68.80%  글자정확도 86.79%  (8.5분)
+ep 14/14  loss 0.3258  완전일치 68.85%  글자정확도 87.01%  (9.2분)
+
+--- 검증 샘플 (정답 → 예측) ---
+     서울40바4455  →  경남60바4455    X
+       31배6256  →  31배6256      OK
+     광주98자7827  →  경남60자7827    X
+       47나4300  →  47나4300      OK
+       51서7667  →  51서7667      OK
+      756누8648  →  756누8648     OK
+     경남57사4800  →  경남60사4800    X
+      975사5340  →  975사5340     OK
+      174아9194  →  174아9194     OK
+      242버3213  →  242버3213     OK
+       39사7678  →  39사7678      OK
+     경북25사9942  →  경남60사9942    X
+
+최고 완전일치 68.85%   총 9.2분
+가중치: runs/crnn_v1/best.pt
