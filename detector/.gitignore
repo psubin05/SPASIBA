@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.vscode/
+
+# Private or generated data
+data/
+datasets/
+CAR_dataset/
+sharp_labels/
+webcam_captures/
+
+# Training outputs (curated files under models/ and reports/ stay tracked)
+outputs/
+runs/
+wandb/
+
+# Local video/image captures
+*.mp4
+*.avi
+*.mov
+capture_*.jpg
+plate_demo_*.jpg

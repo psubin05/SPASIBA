@@ -1,0 +1,17 @@
+{
+  "parameters": 538834,
+  "input": [
+    1,
+    3,
+    48,
+    192
+  ],
+  "fp32_bytes": 2163163,
+  "int8_bytes": 2054194,
+  "pytorch_vs_onnx_max_abs": 9.5367431640625e-06,
+  "fp32_vs_int8_max_abs": 1.7463083267211914,
+  "onnx_fp32_cpu_ms": 1.2448676300118677,
+  "onnx_int8_cpu_ms": 2.6377055200282484,
+  "runs": 100,
+  "note": "CPU time is for this development machine, not Raspberry Pi 4."
+}

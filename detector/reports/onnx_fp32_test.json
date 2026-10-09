@@ -1,0 +1,31 @@
+{
+  "model": "plate_detector/runs/plate_ctc_v3_strong/export/plate_ctc_fp32.onnx",
+  "split": "test",
+  "line": {
+    "count": 6438,
+    "exact": 0.862224293258776,
+    "cer": 0.033947708694032304
+  },
+  "plate": {
+    "count": 6046,
+    "exact": 0.8582533906715184,
+    "cer": 0.033509390957505096
+  },
+  "by_type": {
+    "long": {
+      "count": 4640,
+      "exact": 0.8504310344827586,
+      "cer": 0.0332868912042646
+    },
+    "long_vregion": {
+      "count": 1014,
+      "exact": 0.8895463510848126,
+      "cer": 0.02717510409818102
+    },
+    "tall": {
+      "count": 392,
+      "exact": 0.8698979591836735,
+      "cer": 0.05219386291941497
+    }
+  }
+}
