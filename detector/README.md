@@ -101,6 +101,15 @@ GPU가 없으면:
 python src/webcam_plate_demo.py --camera 0 --device cpu --line-mode ratio
 ```
 
+기울기·두 줄 한글 오인식 자료를 자동 수집하려면 출력한 번호판의 정답을 지정합니다. 예측이 정답과 다른 동안 1초에 한 번씩 원본 프레임, 번호판/줄 crop과 JSON 진단 정보가 `webcam_captures/`에 저장됩니다.
+
+```bash
+python src/webcam_plate_demo.py --camera 0 \
+  --collect-failures --expected-plate "경기71아3535"
+```
+
+정답을 지정하지 않으면 낮은 신뢰도 결과만 자동 저장합니다. 신뢰도는 높지만 틀린 결과는 화면에서 `s`를 눌러 저장할 수 있습니다. contour 기반 `--deskew auto`는 500장 회귀 시험에서 이득이 없어 실험 옵션으로만 남겼으며 기본값은 `off`입니다.
+
 창 없이 카메라 추론 경로만 확인:
 
 ```bash
