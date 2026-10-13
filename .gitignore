@@ -20,3 +20,6 @@ rf_check/
 
 # 로컬 전용 (Claude Code 작업 메모, 커밋하지 않음)
 CLAUDE.md
+
+# Pi 배포용 ONNX (deploy/export_onnx.py로 생성)
+deploy/models/

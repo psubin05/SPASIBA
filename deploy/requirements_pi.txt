@@ -1,0 +1,4 @@
+# 라즈베리파이 4 (64비트 Raspberry Pi OS, Python 3.10~3.12)
+onnxruntime
+opencv-python-headless
+numpy
