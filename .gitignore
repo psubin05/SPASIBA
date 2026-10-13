@@ -2,4 +2,9 @@
 .venv/
 reports/
 __pycache__/
+detector/runs/
+/runs/
+*.pt
+*.png
+*.jpg
 /SPASIBA 번호판 OCR 팀 공유 데이터와 할 일.pdf
