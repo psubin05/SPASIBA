@@ -16,6 +16,7 @@ rf_check/
 # 예외: 최종 검출기 가중치와 학습 기록 그래프
 !detector/weights/plate_v3.pt
 !detector/weights/plate_v3_train/results.png
+!ocr/weights/ocr_v1.pt
 
 # 로컬 전용 (Claude Code 작업 메모, 커밋하지 않음)
 CLAUDE.md
