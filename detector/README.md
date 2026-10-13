@@ -1,172 +1,186 @@
 # detector — 번호판 검출기
 
-SPASIBA 파이프라인의 **① 번호판 찾기** 단계를 담당하는 YOLO 번호판 검출기 코드입니다.
-
-> **최신 상태 (2026-10-13)**: 기본 검출기는 `weights/plate_v3.pt`입니다. v2·v3 데이터와 결과는 [`docs/plate_detector_v2.md`](../docs/plate_detector_v2.md)를 보세요.
-> 아래 내용은 v1(블러 데이터) 시기 기록이며, 지난 모델과 결과 그림은 저장소 밖 `~/sooin/spasiba/archive/detector_20261013/`로 옮겼습니다.
+SPASIBA 파이프라인의 **① 번호판 검출** 단계입니다. 카메라 화면 전체에서 번호판 영역을 박스 하나로 잡아 OCR로 넘깁니다.
 
 ```
-카메라 화면 → [① 번호판 검출 (여기)] → ② 모양 판단 → ③ 줄 검출 → ④ 글자 인식 → 서버 버퍼 매칭
+[Pi] 카메라 → ① 번호판 검출 (여기) → ② 한 줄/두 줄 판단 → ③ 줄 검출(PP-OCR det) → ④ 글자 인식(CTC) → 서버
 ```
 
----
+| 항목 | 값 |
+|---|---|
+| 기본 모델 | **`weights/plate_v3.pt`** (YOLO11n, 클래스 `plate` 1개, 5.5MB) |
+| 입력 | 카메라 화면 전체 (차를 따로 자르지 않음, `direct` 방식) |
+| 출력 | 번호판 박스 (두 줄 번호판도 박스 하나) |
+| 학습 데이터 | Roboflow 차량 사진 4종 7,779장 + AI Hub 두 줄·초록 번호판 900장 |
 
-## 1. 이 폴더가 해결하는 일 두 가지
-
-| | 일 1: 실제 시스템 | 일 2: OCR 학습 데이터 정리 |
-|---|---|---|
-| 입력 | 카메라 화면 (차 전체가 보임) | AI Hub OCR crop (번호판 위주 이미지) |
-| 하는 일 | 차에서 번호판 위치 찾기 → crop → OCR로 전달 | crop 안에서 번호판만 딱 맞게 다시 자르기 |
-| 필요한 학습 데이터 | 선명한 번호판 + 차 전체 맥락 | 선명한 번호판 위주 이미지 + 박스 |
-
-두 일은 입력 모습이 완전히 달라서 **같은 모델 하나로 해결할 수 없습니다** (6장 실험 결과 참고).
+자세한 실험 과정과 판단 근거는 [`docs/plate_detector_v2.md`](../docs/plate_detector_v2.md)에 있습니다.
 
 ---
 
-## 2. 파일 구성
+## 1. 왜 검출기를 따로 두나
 
-| 파일 | 하는 일 | 상태 |
-|---|---|---|
-| `make_yolo_dataset.py` | AI Hub 원본 프레임 + 라벨 → 차량 주변 crop + YOLO 라벨 (`yolo_plate/`) | 실행 완료 |
-| `test_on_sharp.py` | 학습한 모델을 선명한 OCR crop 48장에 돌려 결과 그림 저장 | 실행 완료 |
-| `test_world.py` | YOLO-World(학습 없이 "license plate"로 검출)를 같은 48장에 시험 | 작성됨, 미실행 |
-| `make_synth.py` | 블러 번호판 자리에 선명한 OCR 번호판을 붙여 합성 데이터 생성 | 작성됨, 미실행 |
-| `runs/` | YOLO 학습 결과 (가중치, 그래프) — **Git에 올리지 않음** | - |
+OCR만 화면 전체에 돌리면 생기는 문제 두 가지를 막습니다.
 
----
+| 문제 | 검출기가 하는 일 |
+|---|---|
+| 번호판이 아닌 글자를 읽음 (차 로고·모델명, 매장 간판, 택시 표시등, 광고) | 번호판 박스 안에서만 OCR을 돌림 |
+| 두 줄 번호판(초록 구형, 노란 영업용, 화물차)의 위아래 줄이 같은 번호판인지 모름 | 두 줄 전체를 **박스 하나**로 잡음 → 그 crop 안의 글자는 전부 한 번호판 |
 
-## 3. 데이터
-
-모든 데이터는 저장소 밖 `~/sooin/spasiba/data/`에 있습니다. **데이터와 가중치는 GitHub에 올리지 않습니다.**
-
-| 데이터 | 경로 | 내용 |
-|---|---|---|
-| AI Hub 원본 라벨 | `data/103.자동차_…/추가_데이터_보완_건_220114(원본이미지추가개방)/원본이미지(추가개방)/라벨링데이터/merged/` | 차량·번호판 박스 50만 개 (번호판 박스 491,194개) |
-| AI Hub 원본 프레임 | `…/원본이미지(추가개방)/원천데이터/` | 원천데이터11만 받음, 34,980장 |
-| AI Hub OCR crop | `data/103.자동차_…/01.데이터/` | 선명한 번호판 crop 9만 장 + 번호 텍스트 |
-| YOLO 데이터셋 (블러) | `data/yolo_plate/` | 학습 31,830장 / 검증 3,037장 |
-| 합성 데이터셋 | `data/yolo_plate_synth/` | `make_synth.py` 실행 시 생성 |
-| Roboflow korea car plat | `data/roboflow_korea_plate/` | 받을 예정. OCR crop + 번호판 박스 약 1,000장 |
-
-### AI Hub 원본 데이터의 특징 (중요)
-
-- **한 프레임에 가장 크게 보이는 차 1대만 라벨링**되어 있다. 프레임 전체로 학습하면 다른 차 번호판이 배경으로 학습되므로, **라벨된 차량 주변만 잘라서** 학습한다.
-- **번호판이 전부 블러(모자이크) 처리**되어 있다. 이것만으로 학습하면 "뿌연 사각형"을 번호판으로 배운다.
-- 거의 **전면** 사진이다 (교차로 CCTV).
+검출기는 글자를 읽지 않습니다. 한 줄/두 줄 판단(②)은 crop 안에서 ③이 센 줄 수로 합니다.
 
 ---
 
-## 4. 환경
+## 2. 바로 써보기
 
 ```bash
 source ~/sooin/spasiba/venv/bin/activate
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
-pip install ultralytics opencv-python-headless
-python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+cd ~/sooin/spasiba/SPASIBA/detector
 ```
 
-서버: AIX408-35 (RTX 4090), Ultralytics 8.4.173, torch 2.11.0+cu128
+```python
+from ultralytics import YOLO
+
+model = YOLO("weights/plate_v3.pt")
+r = model.predict("car.jpg", conf=0.25, verbose=False)[0]
+for x1, y1, x2, y2 in r.boxes.xyxy.int().tolist():
+    plate_crop = r.orig_img[y1:y2, x1:x2]        # → ③ 줄 검출 / ④ 글자 인식으로 넘김
+```
+
+여러 사진에 돌려 결과 그림을 보려면:
+
+```bash
+python test_real.py <사진 폴더> direct                  # → real_test_out_direct/ (빨강 = 번호판, 숫자 = 확신도)
+python test_real.py <사진 폴더> direct <다른 가중치.pt>  # 다른 모델과 비교할 때
+```
+
+- 확신도 0.25 이상인 번호판을 **전부** 그립니다 (배경 차 번호판 포함).
+- `two_stage`(COCO 모델로 차를 먼저 찾고 그 안에서 번호판 찾기)도 있지만, 결과가 같고 계산만 늘어서 쓰지 않습니다.
 
 ---
 
-## 5. 사용법
+## 3. 성능
 
-### 5.1 YOLO 데이터셋 만들기
+### 검증 세트 (출처별, 학습과 겹치지 않게 번호·유사 사진 단위로 분할)
+
+| 출처 | 장면 | 이미지 | Precision | Recall | mAP50 | mAP50-95 |
+|---|---|---|---|---|---|---|
+| rf_alpr | 서울 거리 CCTV, 컬러 | 588 | 0.975 | 0.969 | 0.989 | 0.788 |
+| rf_lp_detect | 주차장 고정 카메라, 흑백 | 216 | 0.999 | 0.960 | 0.983 | 0.809 |
+| rf_korean_license | 블랙박스, 길가 주차 차량 | 40 | 0.949 | 0.833 | 0.931 | 0.572 |
+| rf_plate_night | 야간 고정 카메라, 흑백 | 31 | 0.998 | 1.000 | 0.995 | 0.802 |
+| AI Hub 두 줄·초록 crop | 번호판 crop | 100 | 0.999 | 1.000 | 0.995 | 0.851 |
+
+rf_korean_license의 Recall이 낮은 이유는 폭 20px 미만의 먼 번호판이 많아서입니다.
+
+### 실제 사진 (학습에 쓰지 않은 웹 사진)
+
+| 세트 | 결과 |
+|---|---|
+| 일반 차량 21장 (`data/image/`) | 21장 모두 번호판 검출 (박스 26개, 배경 차 번호판 포함). v2에서 놓친 초록 구형 번호판도 검출 |
+| 초록 번호판 26장 (`data/test_green/`, 직접 라벨링) | 폭 30px 이상 번호판 **30/30**을 덮는 박스 검출 |
+
+알려진 한계:
+
+- **초록 번호판 박스가 넉넉합니다** (정답 박스의 약 1.6배). 번호판 거치 홈까지 잡히지만 두 줄을 모두 덮으므로 OCR에는 지장이 없습니다.
+- **폭 30px 미만의 아주 작은 번호판**은 대부분 놓칩니다. 가까운 거리의 주차장 카메라에서는 영향이 작습니다.
+- **실제 지하주차장 + 데모 모형 환경**의 사진으로는 아직 평가하지 않았습니다.
+
+---
+
+## 4. 학습 데이터
+
+모든 데이터는 저장소 밖 `~/sooin/spasiba/data/`에 있습니다 (스크립트는 `../../data`를 기본 경로로 씁니다).
+
+| 데이터 | 경로 | 내용 |
+|---|---|---|
+| Roboflow 4종 | `data/rf_alpr/`, `rf_lp_detect/`, `rf_korean_license/`, `rf_plate_night/` | 차 + 선명한 번호판 사진. 출처·버전은 `download_rf.py` 참고 |
+| `plate_v2` | `data/plate_v2/` | 위 4종을 `plate` 클래스 하나로 합침. train 7,779 / val 875 (이미지는 원본 링크) |
+| `aihub_rare` | `data/aihub_rare/` | AI Hub OCR crop 중 두 줄·초록 번호판 후보 3,688장 |
+| `aihub_sel_1000` | `data/aihub_sel_1000/` | 그중 1,000장 + 자동 생성 박스. train 900 / val 100 |
+| `plate_v3` | `data/plate_v3/data.yaml` | `plate_v2` + `aihub_sel_1000` |
+| `test_green` | `data/test_green/` | 초록 번호판 평가 세트 26장. **학습 금지** |
+
+쓰지 않는 데이터와 이유:
+
+| 데이터 | 이유 |
+|---|---|
+| AI Hub 원본 프레임 (`yolo_plate/`) | 번호판이 전부 블러 → 모자이크를 번호판으로 배움 (v1의 실패 원인) |
+| Roboflow `car_with_plate` | 물체 하나씩 잘린 crop이고 번호판이 모자이크 |
+| AI Hub OCR crop 전체 | 차 맥락이 없는 crop이라 많이 넣으면 "번호판 = 화면을 채우는 것"을 배움. 두 줄·초록만 1,000장(약 11%) 사용 |
+
+---
+
+## 5. 처음부터 다시 만들기
 
 ```bash
-cd ~/sooin/spasiba/SPASIBA/detector
-python make_yolo_dataset.py ../../data
+python download_rf.py list                    # Roboflow 버전 확인 (API 키는 실행할 때 입력)
+python download_rf.py get lp_detect=11 plate_night=3 alpr=1 korean_license=6
+python check_rf_sets.py                       # 데이터 점검: 통계, 중복, 샘플 그림 → rf_check/
+python make_plate_v2.py                       # → data/plate_v2/
+python collect_aihub_rare.py                  # AI Hub 두 줄·초록 후보 → data/aihub_rare/
+python make_plate_v3.py                       # test_green, aihub_sel_1000, plate_v3 생성
 ```
 
-- 원본 라벨과 프레임을 파일명(`imagePath`)으로 매칭한다.
-- 차량 박스를 상하좌우 `MARGIN`(기본 5%)만큼 넓혀 자른다.
-- crop 안에 60% 이상 들어온 번호판을 모두 정답으로 넣는다. 폭 20px 미만 번호판은 제외한다.
-- 긴 변이 640px보다 크면 줄여서 저장한다.
-- **영상(videoName) 단위로** 학습 90% / 검증 10%를 나눈다.
-- 결과: `data/yolo_plate/` (`data.yaml`, `preview.jpg` 포함). 10~20분 소요.
+`make_plate_v3.py`는 AI Hub crop에 박스를 만들 때 `plate_ft_rf_v1`과 `plate_v2`가 필요합니다 (archive에 보관, 아래 7장).
 
-### 5.2 기준 모델 학습
+학습 (tmux 안에서, RTX 4090 기준 약 15분):
 
 ```bash
-yolo detect train model=yolo11n.pt data=$HOME/sooin/spasiba/data/yolo_plate/data.yaml \
-     imgsz=640 batch=64 epochs=30 device=0 workers=8 project=runs name=plate_blur_v1 \
+yolo detect train model=yolo11n.pt data=$HOME/sooin/spasiba/data/plate_v3/data.yaml \
+     imgsz=640 batch=64 epochs=50 device=0 workers=8 project=runs name=plate_v3 \
      degrees=10 perspective=0.0005 shear=5 scale=0.5 hsv_v=0.5 fliplr=0.0
 ```
 
-| 옵션 | 의미 |
+| 옵션 | 이유 |
 |---|---|
-| `degrees=10` | ±10° 회전 증강 |
-| `perspective`, `shear` | 비스듬히 본 효과 |
-| `scale=0.5` | 크기 변화 |
-| `hsv_v=0.5` | 밝기 변화 (어두운 주차장 대비) |
-| `fliplr=0.0` | 좌우 반전 끔 (글자가 뒤집히면 안 됨) |
+| `model=yolo11n.pt` | COCO 사전학습에서 시작. Pi 4에서 돌릴 수 있는 가장 작은 크기 |
+| `degrees=10`, `perspective`, `shear` | 기울어지거나 비스듬히 본 번호판 |
+| `scale=0.5` | 거리에 따른 크기 변화 |
+| `hsv_v=0.5` | 어두운 주차장 |
+| `fliplr=0.0` | 좌우 반전 금지 (글자가 뒤집힘) |
 
-가중치 위치: `runs/detect/runs/plate_blur_v1/weights/best.pt` (`project=runs` 옵션 때문에 `runs`가 두 번 들어감)
-
-### 5.3 선명한 번호판 시험
+평가:
 
 ```bash
-python test_on_sharp.py ../../data                 # 기준 모델로 OCR crop 48장 → sharp_test.png
-python test_world.py ../../data                    # YOLO-World로 같은 48장 → world_test.png
+yolo detect val model=weights/plate_v3.pt data=$HOME/sooin/spasiba/data/test_green/data.yaml
+yolo detect val model=weights/plate_v3.pt data=$HOME/sooin/spasiba/data/plate_v2/eval/val_rf_alpr.yaml  # 출처별
 ```
-
-`test_world.py`에서 `clip` 관련 에러가 나면:
-
-```bash
-pip install git+https://github.com/ultralytics/CLIP.git
-```
-
-### 5.4 합성 데이터로 실제 환경 흉내 내기
-
-```bash
-python make_synth.py ../../data val
-yolo detect val model=runs/detect/runs/plate_blur_v1/weights/best.pt \
-     data=$HOME/sooin/spasiba/data/yolo_plate_synth/data.yaml split=val device=0 \
-     project=runs name=blur_v1_on_synth
-```
-
-블러 번호판 자리에 OCR crop의 선명한 번호판(가장자리를 대충 잘라냄)을 크기와 밝기를 맞춰 붙인다. 박스 위치는 원래 라벨 그대로다.
 
 ---
 
-## 6. 실험 기록
+## 6. 파일 구성
 
-| 날짜 | 실험 | 결과 | 해석 |
+| 파일 | 하는 일 |
+|---|---|
+| `weights/plate_v3.pt` | **기본 검출기** |
+| `weights/plate_v3_train/` | 학습 설정(`args.yaml`)과 epoch별 기록(`results.csv`, `results.png`) |
+| `test_real.py` | 사진 폴더에 모델을 돌려 결과 그림 저장 |
+| `download_rf.py` | Roboflow 데이터셋 버전 확인·다운로드 |
+| `check_rf_sets.py` | Roboflow 데이터 점검 (통계, 중복, 테스트 세트와 겹침, 샘플 그림) |
+| `make_plate_v2.py` | `plate_v2` 데이터셋 생성 |
+| `collect_aihub_rare.py` | AI Hub OCR crop에서 두 줄·초록 번호판 후보 모으기 (PP-OCR 줄 검출 + 색) |
+| `make_plate_v3.py` | 초록 평가 세트, AI Hub 1,000장 자동 박스, `plate_v3` 생성 |
+| `make_yolo_dataset.py`, `make_synth.py`, `test_on_sharp.py`, `check_roboflow.py` | v1 시기 스크립트 (블러 데이터셋, 합성, Roboflow crop 점검) |
+
+---
+
+## 7. 지난 모델
+
+| 모델 | 학습 데이터 | 결과 | 상태 |
 |---|---|---|---|
-| 10/05 | `plate_blur_v1` 학습 (블러 3.2만 장, 30 epoch, 29분) | 블러 검증: P 0.997 / R 0.998 / mAP50 0.994 / mAP50-95 0.654 | 블러 번호판끼리라 점수가 높음. 실제 성능을 뜻하지 않음 |
-| 10/05 | `plate_blur_v1`을 선명한 OCR crop 48장에 적용 | **사실상 0/48** (엉뚱한 작은 박스 2개뿐) | 모델이 "번호판"이 아니라 "모자이크 사각형"을 배움. OCR crop은 차 맥락도 없어 조건이 전혀 다름 |
+| `plate_blur_v1` | AI Hub 원본 프레임 (번호판 블러) | 선명한 번호판 0/48 | 사용 안 함 |
+| `plate_ft_rf_v1` | blur_v1 + Roboflow 번호판 crop | crop 안에서 번호판 박스 잡기에 사용 (AI Hub 자동 박스) | 보조 도구 |
+| `plate_mix_v1`, `v1-2` | 블러 + crop 섞기 | 실제 사진에서 대부분 놓침 | 사용 안 함 |
+| `plate_v2` | Roboflow 4종 | 실제 사진 20/21, 초록 구형 번호판 놓침 | v3로 대체 |
+| **`plate_v3`** | v2 + AI Hub 두 줄·초록 900장 | v2 성능 유지 + 초록 구형 번호판 검출 | **기본** |
 
----
-
-## 7. 앞으로 할 일
-
-> **라벨링 방침:** AI Hub OCR crop을 우리가 직접 2,000장 라벨링하는 계획은 **보류**한다. 먼저 Roboflow `korea car plat`(이미 번호판 박스가 그려진 OCR crop 약 1,000장)을 받아 보고, 품질이 괜찮으면 **손 라벨링을 이걸로 대체**한다. 직접 라벨링은 Roboflow 데이터가 부족하거나 품질이 나쁠 때만 한다.
-
-1. **Roboflow `korea car plat` 데이터 받기** (OCR crop + 번호판 박스 약 1,000장)
-   - 라벨 품질 확인 (느슨한 박스가 있음) → 쓸 만한지 판단
-   - 원본이 AI Hub 데이터로 보이므로, 우리 평가 세트와 **같은 번호가 겹치지 않게** 숫자로 대조
-   - 괜찮으면: 이 데이터로 학습 + 평가 세트만 소량(약 300장) 직접 검수
-   - 부족하면: 모자란 종류(두 줄, 후면 등)만 직접 라벨링해서 보충
-2. **일 2용 검출기**: 기준 모델에서 출발해 Roboflow 데이터로 파인튜닝 → OCR crop 9만 장에 번호판 박스 자동 생성 (일부 사람이 검수)
-3. **일 1용 검출기**: 2번에서 잘라낸 선명한 번호판을 블러 자리에 합성 (`make_synth.py` 확장) → 학습
-4. **실제 차 사진 평가 세트**: 팀원 차량이나 데모 모형 차를 직접 찍어 100~200장 (앞·뒤, 여러 각도, 어두운 조명). **학습에는 섞지 않음**
-5. **데모 사진 파인튜닝**: 모형 차 + 확대 번호판 환경에 맞추기
-6. 기울어진 번호판이 많으면 회전 박스 라벨로 **YOLO OBB** 모델 시험
+지난 모델 가중치와 결과 그림은 저장소 밖 `~/sooin/spasiba/archive/detector_20261013/`에 있습니다.
 
 ---
 
 ## 8. 주의 사항
 
-- 선명한 번호판은 **개인정보**다. 데이터는 팀 내부에서만 쓰고, 공개 웹 라벨링 도구나 저장소에 올리지 않는다. 발표 자료에서는 번호판을 가린다.
-- AI Hub 데이터는 이용 조건(학습·연구 목적, 재배포 금지) 안에서 사용한다.
-- Roboflow 다운로드 링크에는 개인 API 키가 들어 있다. 공용 서버 명령어 기록에 남지 않게 주의한다.
-- 공용 서버라 `git config --global` 대신 저장소 안에서만 사용자 설정을 한다.
-
-### `.gitignore`에 들어가야 할 것
-
-```gitignore
-runs/
-*.pt
-*.png
-*.jpg
-```
+- **선명한 번호판은 개인정보입니다.** 데이터와 결과 그림(`*.jpg`, `*.png`)은 커밋하지 않고, 외부 라벨링 서비스에 올리지 않습니다. 발표 자료에서는 번호판을 가립니다.
+- AI Hub 데이터는 이용 조건(학습·연구 목적, 재배포 금지) 안에서 씁니다. Roboflow 데이터는 각 데이터셋 페이지의 라이선스를 따릅니다.
+- `download_rf.py`는 API 키를 실행할 때 입력받습니다. 키를 명령어나 파일에 적지 않습니다.
+- 학습·대량 처리는 `tmux` 안에서 실행하고, GPU를 쓰기 전에 `nvidia-smi`로 다른 사용자를 확인합니다.
