@@ -6,7 +6,7 @@ from ultralytics import YOLO
 
 random.seed(0)
 data = Path(sys.argv[1] if len(sys.argv) > 1 else "../../data")
-weights = sys.argv[2] if len(sys.argv) > 2 else "runs/detect/runs/plate_blur_v1/weights/best.pt"
+weights = sys.argv[2] if len(sys.argv) > 2 else str(Path.home() / "sooin/spasiba/archive/detector_20261013/runs/detect/runs/plate_blur_v1/weights/best.pt")
 std    = re.compile(r"^\d{2,3}[가-힣]\d{4}$")
 region = re.compile(r"^[가-힣]{2}\d{1,2}[가-힣]\d{4}$")
 

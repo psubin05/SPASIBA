@@ -1,8 +1,8 @@
 task: detect
 mode: train
 model: yolo11n.pt
-data: /home/user/sooin/spasiba/data/yolo_plate/data.yaml
-epochs: 30
+data: /home/user/sooin/spasiba/data/plate_v3/data.yaml
+epochs: 50
 time: null
 patience: 100
 batch: 64
@@ -13,7 +13,7 @@ cache: false
 device: '0'
 workers: 8
 project: runs
-name: plate_blur_v1
+name: plate_v3
 exist_ok: false
 pretrained: true
 cls_remap: true
@@ -111,4 +111,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: tracktrack.yaml
-save_dir: /home/user/sooin/spasiba/SPASIBA/detector/runs/detect/runs/plate_blur_v1
+save_dir: /home/user/sooin/spasiba/SPASIBA/detector/runs/detect/runs/plate_v3

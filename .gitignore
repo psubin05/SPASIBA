@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.env
+venv/
+
+# 데이터·학습 결과·결과 그림 (선명한 번호판 = 개인정보, 커밋 금지)
+runs/
+real_test_out_*/
+rf_check/
+*.log
+*.jpg
+*.jpeg
+*.png
+*.pt
+*.onnx
+# 예외: 최종 검출기 가중치와 학습 기록 그래프
+!detector/weights/plate_v3.pt
+!detector/weights/plate_v3_train/results.png
