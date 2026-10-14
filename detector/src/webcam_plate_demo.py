@@ -23,24 +23,28 @@ import numpy as np
 import onnxruntime as ort
 import torch
 from PIL import Image, ImageDraw, ImageFont
+from ultralytics import YOLO
 
 from build_ocr_dataset import craft_line_cut
-from ocr_common import decode_regions, normalize_plate
-from plate_geometry import rectify_plate
+from ocr_common import decode_regions
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PORTABLE_MODELS = PROJECT_ROOT / "models"
 if PORTABLE_MODELS.exists():
-    DEFAULT_DETECTOR = PORTABLE_MODELS / "detector" / "lp_det.pt"
+    WEBCAM_YOLO11_DETECTOR = (PORTABLE_MODELS / "detector" /
+                              "plate_yolo11n_balanced_webcam_v1.pt")
+    YOLO11_DETECTOR = (WEBCAM_YOLO11_DETECTOR if WEBCAM_YOLO11_DETECTOR.exists()
+                       else PORTABLE_MODELS / "detector" / "plate_yolo11n_balanced_v1.pt")
+    DEFAULT_DETECTOR = (YOLO11_DETECTOR if YOLO11_DETECTOR.exists()
+                        else PORTABLE_MODELS / "detector" / "lp_det.pt")
     DEFAULT_YOLOV5 = PROJECT_ROOT / "third_party" / "yolov5"
-    DEFAULT_OCR_DIR = PORTABLE_MODELS / "ocr"
-    DEFAULT_SAVE_DIR = PROJECT_ROOT / "webcam_captures"
+    WEBCAM_OCR_DIR = PORTABLE_MODELS / "ocr_webcam_v1"
+    DEFAULT_OCR_DIR = WEBCAM_OCR_DIR if WEBCAM_OCR_DIR.exists() else PORTABLE_MODELS / "ocr"
 else:
     DEFAULT_DETECTOR = PROJECT_ROOT / "EasyKoreanLpDetector" / "lp_det.pt"
     DEFAULT_YOLOV5 = PROJECT_ROOT / "EasyKoreanLpDetector" / "yolov5"
     DEFAULT_OCR_DIR = PROJECT_ROOT / "plate_detector" / "runs" / "plate_ctc_v3_strong" / "export"
-    DEFAULT_SAVE_DIR = PROJECT_ROOT / "plate_detector" / "webcam_captures"
 DEFAULT_FONT = Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
 
 
@@ -50,6 +54,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--width", type=int, default=1280)
     parser.add_argument("--height", type=int, default=720)
     parser.add_argument("--detector", type=Path, default=DEFAULT_DETECTOR)
+    parser.add_argument("--detector-backend", choices=("auto", "yolo11", "yolov5"),
+                        default="auto", help="auto selects YOLO11 for plate_yolo11* weights")
     parser.add_argument("--yolov5-repo", type=Path, default=DEFAULT_YOLOV5)
     parser.add_argument("--ocr", type=Path, default=DEFAULT_OCR_DIR / "plate_ctc_fp32.onnx")
     parser.add_argument("--metadata", type=Path, default=DEFAULT_OCR_DIR / "model_metadata.json")
@@ -58,16 +64,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--line-mode", choices=("auto", "ratio", "single"), default="auto",
                         help="auto uses CRAFT only for low-ratio plates; ratio is faster")
-    parser.add_argument("--deskew", choices=("auto", "off"), default="off",
-                        help="experimental contour rectification; off is the validated default")
-    parser.add_argument("--collect-failures", action="store_true",
-                        help="save low-confidence plate/line crops with metadata")
-    parser.add_argument("--expected-plate", default="",
-                        help="known plate text; automatically save every mismatching prediction")
     parser.add_argument("--history", type=int, default=12)
     parser.add_argument("--max-plates", type=int, default=4)
     parser.add_argument("--save-dir", type=Path,
-                        default=DEFAULT_SAVE_DIR)
+                        default=PROJECT_ROOT / "plate_detector" / "webcam_captures")
     parser.add_argument("--device", default="0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--headless", action="store_true",
                         help="do not open a window; useful for camera smoke tests")
@@ -151,39 +151,41 @@ def draw_text(frame: np.ndarray, items: list[tuple[tuple[int, int], str, tuple[i
     return cv2.cvtColor(np.asarray(canvas), cv2.COLOR_RGB2BGR)
 
 
-def save_debug(root: Path, rgb_frame: np.ndarray, annotated_bgr: np.ndarray,
-               records: list[dict], reason: str) -> Path:
-    stamp = time.strftime("%Y%m%d_%H%M%S") + f"_{time.time_ns() % 1_000_000_000:09d}"
-    output = root / f"{stamp}_{reason}"
-    output.mkdir(parents=True, exist_ok=False)
-    Image.fromarray(rgb_frame).save(output / "frame_raw.jpg", quality=95)
-    cv2.imwrite(str(output / "frame_annotated.jpg"), annotated_bgr)
-    metadata = {"reason": reason, "plates": []}
-    for index, record in enumerate(records):
-        record["raw_plate"].save(output / f"plate_{index}_raw.jpg", quality=95)
-        record["plate"].save(output / f"plate_{index}_rectified.jpg", quality=95)
-        for line_index, line in enumerate(record["lines"]):
-            line.save(output / f"plate_{index}_line_{line_index}.jpg", quality=95)
-        metadata["plates"].append({key: value for key, value in record.items()
-                                    if key not in {"raw_plate", "plate", "lines"}})
-    (output / "metadata.json").write_text(
-        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    return output
+def load_detector(args: argparse.Namespace):
+    backend = args.detector_backend
+    if backend == "auto":
+        backend = "yolo11" if args.detector.name.startswith("plate_yolo11") else "yolov5"
+    if backend == "yolo11":
+        return YOLO(str(args.detector)), backend
+    if not args.yolov5_repo.exists():
+        raise FileNotFoundError(args.yolov5_repo)
+    model = torch.hub.load(str(args.yolov5_repo.resolve()), "custom",
+                           path=str(args.detector.resolve()), source="local",
+                           device=args.device)
+    model.conf = args.det_conf
+    return model, backend
+
+
+def detect_plates(detector, backend: str, rgb: np.ndarray, args: argparse.Namespace) -> np.ndarray:
+    if backend == "yolo11":
+        result = detector.predict(rgb, imgsz=args.imgsz, conf=args.det_conf,
+                                  iou=0.40, device=args.device, max_det=args.max_plates,
+                                  verbose=False)[0]
+        return result.boxes.data.detach().cpu().numpy()
+    result = detector(rgb, size=args.imgsz)
+    return result.xyxy[0].detach().cpu().numpy()
 
 
 def main() -> None:
     args = parse_args()
-    expected_plate = normalize_plate(args.expected_plate) if args.expected_plate else ""
     if args.headless and args.max_frames <= 0:
         raise ValueError("--headless requires --max-frames greater than zero")
-    for required in (args.detector, args.yolov5_repo, args.ocr, args.metadata):
+    for required in (args.detector, args.ocr, args.metadata):
         if not required.exists():
             raise FileNotFoundError(required)
 
-    detector = torch.hub.load(str(args.yolov5_repo.resolve()), "custom",
-                              path=str(args.detector.resolve()), source="local",
-                              device=args.device)
-    detector.conf = args.det_conf
+    detector, detector_backend = load_detector(args)
+    print(f"detector={args.detector} backend={detector_backend} device={args.device}")
     recognizer = CTCRecognizer(args.ocr, args.metadata)
     craft_reader = None
     if args.line_mode == "auto":
@@ -201,7 +203,6 @@ def main() -> None:
     args.save_dir.mkdir(parents=True, exist_ok=True)
     previous_time = time.perf_counter()
     frame_count = 0
-    last_failure_save = 0.0
 
     try:
         while True:
@@ -209,11 +210,9 @@ def main() -> None:
             if not ok:
                 raise RuntimeError("Webcam frame read failed")
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = detector(rgb, size=args.imgsz)
-            predictions = result.xyxy[0].detach().cpu().numpy()
+            predictions = detect_plates(detector, detector_backend, rgb, args)
             predictions = sorted(predictions, key=lambda row: float(row[4]), reverse=True)
             text_items = []
-            debug_records = []
             current_primary = ""
             for index, prediction in enumerate(predictions[:args.max_plates]):
                 x1, y1, x2, y2, detection_confidence = prediction[:5]
@@ -224,11 +223,7 @@ def main() -> None:
                 bottom = min(frame.shape[0], int(round(y2 + pad)))
                 if right - left < 8 or bottom - top < 8:
                     continue
-                raw_plate = Image.fromarray(rgb[top:bottom, left:right])
-                if args.deskew == "auto":
-                    plate, geometry = rectify_plate(raw_plate)
-                else:
-                    plate, geometry = raw_plate, {"applied": False, "method": "off", "angle": 0.0}
+                plate = Image.fromarray(rgb[top:bottom, left:right])
                 lines, line_type = split_lines(plate, args.line_mode, craft_reader)
                 text, ocr_confidence = recognizer.recognize(lines)
                 if index == 0 and text:
@@ -236,15 +231,8 @@ def main() -> None:
                     history.append(text)
                 color = (40, 220, 40) if ocr_confidence >= 0.75 else (255, 190, 40)
                 cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-                angle = float(geometry.get("angle", 0.0))
-                label = (f"{text or '?'}  det:{detection_confidence:.2f} "
-                         f"ocr:{ocr_confidence:.2f} {line_type} angle:{angle:+.1f}")
+                label = f"{text or '?'}  det:{detection_confidence:.2f} ocr:{ocr_confidence:.2f} {line_type}"
                 text_items.append(((left, max(0, top - 34)), label, color))
-                debug_records.append({"raw_plate": raw_plate, "plate": plate, "lines": lines,
-                                      "text": text, "ocr_confidence": ocr_confidence,
-                                      "detection_confidence": float(detection_confidence),
-                                      "line_type": line_type, "geometry": geometry,
-                                      "box": [left, top, right, bottom]})
 
             stable = Counter(history).most_common(1)[0][0] if history else "-"
             now = time.perf_counter()
@@ -252,23 +240,9 @@ def main() -> None:
             previous_time = now
             text_items.append(((12, 10), f"현재: {current_primary or '-'}", (255, 255, 255)))
             text_items.append(((12, 44), f"안정화: {stable}   FPS: {fps:.1f}", (80, 255, 255)))
-            if expected_plate:
-                matched = current_primary == expected_plate
-                expected_color = (80, 255, 80) if matched else (255, 100, 100)
-                text_items.append(((12, 78), f"정답: {expected_plate}  {'일치' if matched else '불일치'}",
-                                   expected_color))
             text_items.append(((12, frame.shape[0] - 30), "q: 종료  s: 저장  r: 기록 초기화", (220, 220, 220)))
             frame = draw_text(frame, text_items, font)
             frame_count += 1
-            if args.collect_failures and debug_records:
-                weakest = min(record["ocr_confidence"] for record in debug_records)
-                mismatch = bool(expected_plate and current_primary != expected_plate)
-                if (weakest < 0.72 or mismatch) and now - last_failure_save >= 1.0:
-                    reason = "expected_mismatch" if mismatch else "low_confidence"
-                    for record in debug_records:
-                        record["expected_plate"] = expected_plate
-                    save_debug(args.save_dir, rgb, frame, debug_records, reason)
-                    last_failure_save = now
             if args.headless:
                 print(f"frame={frame_count} current={current_primary or '-'} stable={stable} fps={fps:.1f}")
                 if args.max_frames and frame_count >= args.max_frames:
@@ -281,7 +255,9 @@ def main() -> None:
             if key == ord("r"):
                 history.clear()
             if key == ord("s"):
-                output = save_debug(args.save_dir, rgb, frame, debug_records, "manual")
+                stamp = time.strftime("%Y%m%d_%H%M%S")
+                output = args.save_dir / f"plate_demo_{stamp}.jpg"
+                cv2.imwrite(str(output), frame)
                 print(f"saved: {output}")
             if args.max_frames and frame_count >= args.max_frames:
                 break

@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-14",
+  "split": "chronologically latest webcam frames per expected plate",
+  "images": 36,
+  "exact": 30,
+  "accuracy": 0.8333333333333334,
+  "missed_detections": 0,
+  "by_plate": {
+    "경기51거2824": {"exact": 14, "count": 15},
+    "137로2805": {"exact": 4, "count": 9},
+    "서울12가3456": {"exact": 12, "count": 12}
+  },
+  "pipeline": "YOLO11 detector -> 0.02 padded crop -> ratio line split -> fp32 ONNX CTC",
+  "warning": "These are later frames of the same three plate identities used for camera-domain adaptation."
+}

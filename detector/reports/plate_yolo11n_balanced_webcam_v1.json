@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-14",
+  "model": "models/detector/plate_yolo11n_balanced_webcam_v1.pt",
+  "class": "plate",
+  "evaluations": {
+    "roboflow_external_test": {
+      "images": 348,
+      "instances": 349,
+      "precision": 0.994,
+      "recall": 0.991,
+      "map50": 0.994,
+      "map50_95": 0.755
+    },
+    "aihub_blur_val": {
+      "images": 3364,
+      "instances": 3364,
+      "precision": 0.988,
+      "recall": 0.984,
+      "map50": 0.991,
+      "map50_95": 0.571
+    },
+    "webcam_chronological_val": {
+      "images": 36,
+      "instances": 36,
+      "precision": 0.998,
+      "recall": 1.0,
+      "map50": 0.995,
+      "map50_95": 0.714
+    }
+  },
+  "warning": "The webcam validation contains later frames of the same three plate identities used for adaptation; it is a camera-domain check, not a new-identity generalization result."
+}

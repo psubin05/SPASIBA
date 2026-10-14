@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify bundled model files and optionally load the YOLOv5 detector."""
+"""Verify the default bundled YOLO11 detector and CTC OCR artifacts."""
 
 from __future__ import annotations
 
@@ -16,15 +16,14 @@ ROOT = Path(__file__).resolve().parent
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--full", action="store_true", help="also load YOLOv5 detector weights")
+    parser.add_argument("--full", action="store_true", help="also load and run the YOLO11 detector")
     args = parser.parse_args()
 
     paths = {
-        "detector": ROOT / "models/detector/lp_det.pt",
-        "ocr_pt": ROOT / "models/ocr/plate_ctc_v3_strong.pt",
-        "ocr_onnx": ROOT / "models/ocr/plate_ctc_fp32.onnx",
-        "metadata": ROOT / "models/ocr/model_metadata.json",
-        "yolov5": ROOT / "third_party/yolov5/hubconf.py",
+        "detector": ROOT / "models/detector/plate_yolo11n_balanced_webcam_v1.pt",
+        "ocr_pt": ROOT / "models/ocr_webcam_v1/plate_ctc_webcam_v1.pt",
+        "ocr_onnx": ROOT / "models/ocr_webcam_v1/plate_ctc_fp32.onnx",
+        "metadata": ROOT / "models/ocr_webcam_v1/model_metadata.json",
     }
     missing = [str(path) for path in paths.values() if not path.exists()]
     if missing:
@@ -40,10 +39,11 @@ def main() -> None:
     print(f"OCR ONNX OK: input={sample.shape}, output={output.shape}")
 
     if args.full:
-        import torch
-        model = torch.hub.load(str((ROOT / "third_party/yolov5").resolve()), "custom",
-                               path=str(paths["detector"].resolve()), source="local", device="cpu")
-        print(f"YOLOv5 detector OK: {type(model).__name__}")
+        from ultralytics import YOLO
+        model = YOLO(str(paths["detector"]))
+        result = model.predict(np.zeros((640, 640, 3), dtype=np.uint8), device="cpu",
+                               imgsz=640, verbose=False)[0]
+        print(f"YOLO11 detector OK: {type(model).__name__}, boxes={len(result.boxes)}")
     print("Bundle verification passed.")
 
 

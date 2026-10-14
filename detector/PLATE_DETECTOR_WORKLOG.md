@@ -498,80 +498,175 @@ plate_detector/.venv/bin/python plate_detector/webcam_plate_demo.py \
 
 다른 사용자는 AI Hub 데이터를 별도로 받아 README 형식으로 배치하면 최종 OCR 체크포인트에서 추가 학습하거나, 데이터셋 생성부터 다시 수행할 수 있다. 데이터 자체는 개인정보·이용조건 때문에 Git 묶음에 포함하지 않았다.
 
-### SPASIBA 저장소 최종 배치
+## 2026-10-14 Roboflow 추가 데이터, 균형 검출 학습, 웹캠 OCR 적응
 
-처음 만든 `SPASIBA_plate_ocr/`는 Git으로 옮기기 위한 운반용 복사본이었다. 저장소 안에 같은 포장 폴더를 그대로 넣지 않고, 2026-10-09에 다음 구조로 바로잡았다.
+### 입력 데이터 점검
 
-```text
-SPASIBA/
-├── README.md
-└── detector/
-    ├── src/
-    ├── models/
-    ├── reports/
-    ├── third_party/yolov5/
-    ├── README.md
-    ├── requirements.txt
-    └── verify_bundle.py
+`CAR_dataset`에 사용자가 내려받은 두 ZIP을 원본 그대로 보존하고 별도 디렉터리에 풀었다.
+
+| 데이터 | 이미지 | 원래 라벨 | 처리 |
+| --- | ---: | --- | --- |
+| Korea CarPlate v3 | 1,291 | 2 classes, 대부분 segmentation polygon | 모두 `plate` 1 class AABB로 변환 |
+| Korean license plate v2 | 2,381 | 1 class bbox, polygon 6개 | `plate` AABB로 통일 |
+
+두 데이터 모두 Roboflow README 기준 CC BY 4.0이며 라이선스 원문을 생성 데이터셋의 `licenses/`에 복사했다. 문자열 OCR 정답은 없으므로 이 ZIP은 OCR 문자인식 모델이 아니라 **번호판 검출기**에만 사용했다.
+
+Roboflow 증강본은 같은 원본 이름 뒤에 `.rf.<hash>`가 붙는다. 원본 이름 단위로 다시 묶어 80/10/10으로 결정론적 분할했고 train/val/test 원본 그룹 중복은 모두 0이다. 두 ZIP 사이의 같은 이름도 함께 그룹화했다. 빈 라벨 7장은 실제 번호판이 보이지만 정답 박스가 누락돼 제외했다.
+
+최종 외부 데이터 수:
+
+- train 2,913장
+- val 404장
+- test 348장, 번호판 349개
+- polygon 1,290행을 축 정렬 bbox로 변환
+
+재현 스크립트 `src/prepare_roboflow_detect_dataset.py`도 공유 폴더에 포함했다. 준비 과정에서 이미지 symlink를 쓰면 Ultralytics가 symlink 원본 경로의 다중 클래스 라벨을 읽는 문제가 확인됐다. 생성 이미지를 실제 파일로 복사하도록 수정했고 모든 라벨이 5필드 class 0인지 재검사했다.
+
+### 검출 학습에서 발견한 실패와 수정
+
+블러 31,830장과 외부 선명 train을 2회 반복해 한 번에 학습한 첫 시도는 통합 val 점수만 높고 외부 test 재현율이 11.5%에 불과했다. 블러 데이터가 검증·학습을 지배해 선명 도메인 실패가 가려진 것이다. 이 실행은 `plate_mix_roboflow_v2`에 보존하지만 사용하지 않는다.
+
+수정한 학습 순서:
+
+1. 일반 YOLO11n에서 외부 선명 데이터만 20 epoch 학습
+2. 선명 모델을 시작점으로 선명 2,913장 + 블러 무작위 2,913장을 1:1로 구성해 통합 학습
+3. 실제 웹캠 캡처 metadata의 최고 신뢰도 박스만 사용해 143 train / 36 val을 만들고, 균형 데이터와 함께 낮은 학습률로 6 epoch 적응
+
+웹캠 캡처 분할은 번호판별 시간 순서 후반 20%를 val로 남겼다. 세 번호판의 연속 프레임이라 번호 단위 일반화 평가는 아니며, 휴대전화 화면 도메인에 맞추는 제한적 적응용이다. 생성 스크립트는 `src/prepare_webcam_pseudo_dataset.py`다.
+
+최종 검출 성능:
+
+| 모델/평가 | Precision | Recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: |
+| 기존 `plate_blur_v1`, 외부 선명 test | 0% | 0% | 0% | 0% |
+| 선명 전용 모델, 외부 test | 99.4% | 99.1% | 99.2% | 76.2% |
+| 균형 모델, 외부 test | 99.4% | 99.1% | 99.2% | 74.9% |
+| 균형 모델, 블러 val | 98.5% | 98.6% | 98.9% | 56.9% |
+| **최종 웹캠 적응 모델, 외부 test** | **99.4%** | **99.1%** | **99.4%** | **75.5%** |
+| **최종 웹캠 적응 모델, 블러 val** | **98.8%** | **98.4%** | **99.1%** | **57.1%** |
+| **최종 웹캠 적응 모델, 웹캠 val** | **99.8%** | **100%** | **99.5%** | **71.4%** |
+
+완료 기준인 선명 평가 재현율 95% 이상을 외부 test에서 99.1%로 충족했다. 최종 가중치는 `models/detector/plate_yolo11n_balanced_webcam_v1.pt`이며, 웹캠 도메인 적응 전 모델도 `plate_yolo11n_balanced_v1.pt`로 보존했다.
+
+### 웹캠 코드 YOLO11 연결
+
+`src/webcam_plate_demo.py`에 `--detector-backend auto|yolo11|yolov5`를 추가했다. 새 기본 가중치가 있으면 YOLO11을 자동 선택하고, 기존 `lp_det.pt`를 지정하면 YOLOv5 경로도 계속 사용할 수 있다. YOLO11 NMS IoU를 0.40으로 설정해 한 번호판의 중첩 검출을 제거했다.
+
+세 대표 저장 프레임에서 적응 전 새 모델은 낮은 신뢰도와 배경 오검출이 있었지만, 최종 모델은 각 프레임에서 번호판 1개만 남겼다. 검출 신뢰도는 각각 0.846, 0.721, 0.829였다.
+
+### OCR hard-example 파인튜닝
+
+Roboflow ZIP에는 문자열 라벨이 없으므로 OCR에는 직접 사용할 수 없다. 대신 기존 캡처 metadata의 `expected_plate`를 이용했다. 검출 박스 비율이 2.6 미만이면 윗줄/아랫줄로 자르고 `split_two_line()`으로 정답도 나눴다. AI Hub OCR 50,457 train 줄에 웹캠 266 train 줄을 20회 반복해 55,777줄로 구성했다. 시간 후반 69줄/36프레임은 웹캠 val로 보류했다.
+
+재현 스크립트: `src/prepare_webcam_ocr_adaptation.py`
+
+기존 `plate_ctc_v3_strong.pt`에서 lr `5e-5`, mild augmentation, batch 256으로 5 epoch 학습했고 4 epoch 체크포인트가 최적이었다.
+
+| OCR 평가 | 기존 | 최종 |
+| --- | ---: | ---: |
+| 웹캠 val 전체 번호판 일치율 | 0.00% | **83.33%** |
+| 웹캠 tall 33장 전체 일치율 | 0.00% | **87.88%** |
+| 웹캠 line 일치율 | 0.00% | **89.86%** |
+| AI Hub val 전체 번호판 일치율 | 약 85.8~86.2% | **87.60%** |
+| AI Hub tall 전체 일치율 | - | **89.30%** |
+
+최종 PyTorch/ONNX/int8 모델은 `models/ocr_webcam_v1/`에 저장했다. 현재 개발 PC에서 fp32 ONNX는 약 1.87ms, dynamic int8은 약 4.59ms로 int8이 더 느렸으므로 Pi4에서 따로 측정하기 전에는 fp32를 기본으로 둔다. PyTorch와 fp32 ONNX 최대 절대 오차는 `1.53e-5`였다.
+
+### 최종 end-to-end 확인
+
+최종 YOLO11 검출 → 비율 기반 줄 분리 → 새 fp32 ONNX OCR을 실제 저장 프레임에 연결한 결과:
+
+시간 후반 보류 프레임 36장 전체를 metadata 정답 crop이 아니라 최종 detector 출력부터 처리한 end-to-end 전체 일치율은 **30/36 = 83.33%**였고 검출 누락은 0장이었다. 번호판별로는 `경기51거2824` 14/15, `137로2805` 4/9, `서울12가3456` 12/12였다. 현재 남은 주 오류는 한 줄 `137로2805`의 각도·crop 변화다.
+
+| 정답 | 최종 예측 | 검출 신뢰도 | OCR 신뢰도 | 결과 |
+| --- | --- | ---: | ---: | --- |
+| `서울12가3456` | `서울12가3456` | 0.846 | 0.878 | 정확 |
+| `137로2805` | `137로2805` | 0.721 | 0.931 | 정확 |
+| `경기51거2824` | `경기51거2824` | 0.829 | 0.955 | 정확 |
+
+공유 폴더 기본 실행:
+
+```bash
+cd SPASIBA_plate_ocr
+python src/webcam_plate_demo.py --camera 0 --line-mode ratio
 ```
 
-브랜치는 `heewoo/plate_ocr`이고, 저장소 내부 최종 경로는 `/home/misys/cloudAIoT/SPASIBA/detector`다. 재배치 후 ONNX 검증, YOLOv5 CPU 로드, `/dev/video0` GPU 한 프레임 추론을 다시 통과했다. 외부 운반용 복사본과 최초 학습 데이터·가중치는 삭제하지 않았다.
+전체 모델 파일 확인:
 
-## 2026-10-09 실제 웹캠 실패 피드백과 개선 계획
+```bash
+python verify_bundle.py
+python verify_bundle.py --full
+```
 
-실제 확인에서 기울어진 번호판 인식이 약하고, 두 줄 번호판은 숫자보다 첫 줄 한글이 불안정하다는 피드백이 있었다.
+### 해석과 남은 제한
 
-저장된 독립 test 예측을 다시 분해한 결과:
+- 선명 외부 test의 99.1% recall은 Roboflow 두 데이터의 원본 그룹 중복을 막은 결과다.
+- 웹캠 100% 검출 recall과 OCR 83.3%는 같은 세 번호판의 시간 분리 결과이며 새로운 번호판으로의 일반화 수치가 아니다.
+- 대표 세 프레임은 모두 정확해졌지만 휴대전화 화면 특성을 외울 수 있다. 실제 데모가 인쇄물/모형 차량이면 그 환경의 새 번호판을 번호 단위 hold-out으로 추가 평가해야 한다.
+- 현재 검출은 회전 증강을 적용한 AABB다. 심한 회전에서 판을 수평화하려면 검수된 OBB 또는 네 꼭짓점 라벨이 여전히 가장 올바른 장기 해법이다.
+- 데이터·원본 캡처·학습 runs는 개인정보와 용량 때문에 공유 폴더에 넣지 않았고, 재학습 코드와 최종 체크포인트만 포함했다.
+- 이번 작업 중 Git 명령, commit, push는 실행하지 않았다.
 
-| 조건 | 두 줄 윗줄 완전일치 | 두 줄 아랫줄 완전일치 |
-| --- | ---: | ---: |
-| clean teacher crop | 89.29% | 90.05% |
-| strong 합성 변형 | 81.12% | 78.83% |
+## 2026-10-14 최종 공유 묶음 확인
 
-두 줄 전체 필드 정확도:
+이번 작업의 최종 전달 위치는 `/home/misys/cloudAIoT/SPASIBA_plate_ocr/`이고 전체 크기는 약 43MB다. 원본 AI Hub/Roboflow 데이터와 웹캠 캡처는 개인정보·라이선스·용량 때문에 넣지 않았으며, 실행과 재학습에 필요한 코드·가중치·설명·평가 결과만 모았다.
 
-| 조건 | 지역명 | 앞 숫자 | 용도 한글 | 뒤 숫자 |
-| --- | ---: | ---: | ---: | ---: |
-| clean | 90.05% | 88.52% | 89.80% | 90.31% |
-| strong | 81.38% | 76.79% | 78.06% | 80.87% |
+최종 기본 파일:
 
-학습용으로 잘 잘린 test에서는 윗줄이 아랫줄보다 특별히 약하지 않았다. 따라서 실제 웹캠 실패의 우선 원인은 다음으로 판단한다.
+- 검출기: `models/detector/plate_yolo11n_balanced_webcam_v1.pt`
+- 배포 OCR: `models/ocr_webcam_v1/plate_ctc_fp32.onnx`
+- 추가 학습 OCR: `models/ocr_webcam_v1/plate_ctc_webcam_v1.pt`
+- 웹캠 실행: `src/webcam_plate_demo.py`
+- Roboflow 변환: `src/prepare_roboflow_detect_dataset.py`
+- 웹캠 검출 데이터 생성: `src/prepare_webcam_pseudo_dataset.py`
+- 웹캠 OCR 데이터 생성: `src/prepare_webcam_ocr_adaptation.py`
+- 실행·재학습 안내: `README.md`
+- 모델 무결성 목록: `MODEL_SHA256SUMS.txt`
 
-1. 현재 웹캠 검출기는 회전각 없는 축 정렬 bbox만 반환한다.
-2. 번호판을 deskew하지 않고 CRAFT/비율로 줄을 나누므로 기울면 줄 crop 자체가 잘못될 수 있다.
-3. teacher-cropped AI Hub 영상과 확대 출력 번호판·웹캠의 폰트 크기, 반사, 초점, 인쇄 질감이 다르다.
-4. tall 번호판은 3,712장으로 long 계열보다 적고 학습 sampling도 동일 비율이었다.
-5. 지역명 두 글자를 시각적으로는 두 glyph인데 CTC에서는 토큰 하나로 취급한다. 특히 세로 지역명에는 1D CTC 정렬이 불리하다.
+최종 검증 결과:
 
-개선 우선순위:
+1. 수정 Python 파일 전체 구문 검사 통과
+2. `MODEL_SHA256SUMS.txt`에 등록한 12개 모델·메타데이터 파일 전부 SHA-256 검사 통과
+3. fp32 ONNX 입력 `(1, 3, 48, 192)`, 출력 `(1, 48, 66)` 확인
+4. 최종 YOLO11 가중치 CPU 로드 및 더미 이미지 추론 통과
+5. 세 대표 실제 프레임에서 최종 detector → 줄 분리 → ONNX OCR 결과 모두 정답
+6. YOLO11 IoU 0.40 NMS 적용 후 대표 프레임마다 중복 없이 검출 1개만 반환
 
-1. 웹캠에서 원본 프레임, 검출 plate crop, 윗줄/아랫줄 crop, 예측·확률·각도를 함께 저장해 실제 실패셋을 만든다.
-2. 수동 회전 박스 2,000장으로 YOLO11n-OBB를 학습하고 검출 각도로 plate crop을 수평 정렬한 뒤 줄 분리를 수행한다.
-3. 원근이 큰 경우에는 회전만이 아니라 네 꼭짓점 또는 plate segmentation으로 homography rectification을 적용한다.
-4. 두 줄 crop을 전체 폭 반분이 아니라 CRAFT text 영역의 합집합으로 타이트하게 잘라 글자 높이를 확보한다.
-5. tall 윗줄과 드문 용도 한글을 4~5배 oversampling하고, 각도 구간별 실제 웹캠 hard example을 추가 파인튜닝한다.
-6. 지역명은 17-class 전용 분류 head/모델로 분리하고 숫자·용도 문자는 CTC가 읽도록 한다. 세로 지역명을 1D CTC 토큰 하나로 읽는 현재 방식보다 구조에 맞다.
-7. 실제 카메라 평가를 각도 `0~5°`, `5~15°`, `15~30°`, long/tall, 지역명/용도 한글 필드별로 나눠 측정한다.
-8. 다중 프레임은 최종 문자열 다수결이 아니라 CTC log probability를 누적해 서버 후보 번호와 비교한다.
+기본 실행 명령:
 
-가장 큰 단기 효과는 **OCR 모델을 다시 크게 만드는 것보다 OBB deskew + 실제 웹캠 실패 crop 파인튜닝**에서 기대한다. 실제 실패 프레임이 없는 상태에서 합성 회전만 더 강하게 적용하면 clean 정확도가 다시 하락할 가능성이 있다.
+```bash
+cd ~/cloudAIoT/SPASIBA_plate_ocr
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python verify_bundle.py --full
+python src/webcam_plate_demo.py --camera 0 --line-mode ratio
+```
 
-### contour 자동 보정 검증과 결정
+CUDA 12.8 환경에서는 README에 적은 PyTorch CUDA wheel 설치 명령을 먼저 사용한다. 모델 파일은 `.gitattributes`에서 `*.pt`, `*.onnx`를 Git LFS 대상으로 지정했지만, 이 작업에서는 사용자의 명시적 지시가 없었으므로 Git 저장소 조작이나 업로드를 수행하지 않았다.
 
-번호판 외곽 사각형을 OpenCV contour로 찾아 perspective transform하는 실험 구현을 만들고, `long`/`long_vregion` test 이미지 500장에 현재 detector와 OCR을 연결해 전후를 비교했다.
+## 2026-10-14 웹캠 실행 환경 오류 수정
 
-| 항목 | 결과 |
-| --- | ---: |
-| 원본 전체 일치율 | 88.4% |
-| contour 보정 후 전체 일치율 | 88.0% |
-| 보정 적용 | 6 / 500장 |
-| 개선 | 0장 |
-| 악화 | 2장 |
+`source ../plate_detector/.venv/bin/activate` 실행 시 파일이 없고 시스템 Python에서 `ModuleNotFoundError: cv2`가 발생했다. 확인 결과 가상환경 디렉터리와 설치 패키지는 정상이지만 `bin/activate` 스크립트만 없었다. 가상환경 Python을 직접 실행하면 `cv2 5.0.0`, `torch 2.11.0+cu128`, CUDA, Ultralytics, ONNX Runtime을 모두 정상 로드했다.
 
-검증 결과 이 방식은 기본 적용할 수준이 아니다. 웹캠의 `--deskew` 기본값은 `off`로 두고, contour 방식은 실험 옵션으로만 보존한다. 최종 수평 보정은 검출 모델이 직접 각도를 내는 OBB 또는 검수된 네 꼭짓점 모델로 교체한다.
+`python3-venv` 시스템 패키지가 설치되지 않아 `python -m venv --upgrade`로 activate를 재생성할 수는 없었다. 기존 가상환경은 손상되지 않았고 실제 `/dev/video0` 한 프레임에서 최종 YOLO11과 OCR 경로가 정상 실행됐다.
 
-### 실제 실패 데이터 자동 수집
+사용자가 activate 경로를 알 필요가 없도록 `run_webcam.sh`를 추가했다. 이 스크립트는 다음 순서로 Python을 선택한다.
 
-웹캠 도구가 프레임 원본, 표시 화면, detector 원본 crop, 실험 보정 crop, 줄별 crop, bbox, 검출/OCR 신뢰도와 예측 문자열을 한 디렉터리에 저장하도록 확장했다. `--collect-failures`는 OCR 신뢰도 0.72 미만을 자동 저장한다. 출력 번호판의 정답을 아는 경우 `--expected-plate`를 함께 주면 고신뢰도 오답도 1초 간격으로 자동 저장한다. 이 자료로 detector 실패와 줄 분리/OCR 실패를 분리하고, 번호 단위 train/validation 분할 후 hard-example 파인튜닝한다.
+1. 공유 폴더의 `.venv/bin/python`
+2. 현재 서버의 `../plate_detector/.venv/bin/python`
+3. 시스템 `python3`
 
-현재 작업 공간을 확인했을 때 수동 OBB 라벨과 실제 웹캠 실패 캡처는 아직 0장이었다. 따라서 회전 검출기와 실제 환경 파인튜닝을 검증 가능한 방식으로 바로 실행할 학습 입력은 아직 없다. 코드 준비 후 `/dev/video0` + GPU + 정답 문자열 옵션으로 실제 1프레임 추론까지 통과했다. 다음 학습은 자동 수집된 실패셋이 생긴 뒤 수행하며, 캡처 이미지는 개인정보이므로 `.gitignore`에서 계속 제외한다.
+현재 서버 실행 명령:
+
+```bash
+cd ~/cloudAIoT/SPASIBA_plate_ocr
+bash run_webcam.sh --camera 0 --line-mode ratio
+```
+
+직접 실행하려면 다음 명령도 동일하게 동작한다.
+
+```bash
+../plate_detector/.venv/bin/python src/webcam_plate_demo.py \
+  --camera 0 --line-mode ratio
+```
