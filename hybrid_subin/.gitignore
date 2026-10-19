@@ -1,0 +1,5 @@
+.venv/
+outputs/
+models/paddlex/
+__pycache__/
+*.pyc

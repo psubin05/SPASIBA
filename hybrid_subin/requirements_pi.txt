@@ -1,0 +1,6 @@
+# Picamera2/libcamera must be installed by apt on Raspberry Pi OS.
+# sudo apt install python3-picamera2 python3-opencv
+paddleocr>=3.3,<4
+ultralytics>=8.4,<9
+numpy>=1.26,<3
+Pillow>=10,<13

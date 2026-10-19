@@ -1,0 +1,6 @@
+# Install a platform-appropriate torch/torchvision and paddlepaddle first.
+ultralytics>=8.4,<9
+paddleocr>=3.3,<4
+opencv-python>=4.10,<6
+numpy>=1.26,<3
+Pillow>=10,<13
