@@ -1,5 +1,9 @@
 # Hybrid Subin ALPR
 
+> Raspberry Pi에서 Git clone부터 CSI 카메라 실행까지 진행하려면
+> [RASPBERRY_PI.md](RASPBERRY_PI.md)를 참고하세요. 코드는
+> `heewoo/plate_ocr` 브랜치의 `hybrid_subin` 폴더에 있습니다.
+
 Soogguang의 `plate_v3` 번호판 검출 흐름과 Subin의 PaddleOCR 인식 방식을 결합한 한국 자동차 번호판 인식 모듈입니다.
 
 ```text
