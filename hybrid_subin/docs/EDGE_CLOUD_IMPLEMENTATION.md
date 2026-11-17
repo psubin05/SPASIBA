@@ -245,3 +245,27 @@ TLS 테스트 인증서는 임시 디렉터리에서 생성·삭제하며 Git에
 - `sha256sum -c MODEL_SHA256SUMS.txt`: `plate_v3.pt` PASS, 기존 모델 보존 확인.
 - 모델 없는 CLI 오프라인 실행: 첫 실행 1건 저장, 재실행 새 이벤트 0건/기존 pending 1건 보존 확인.
 - crop TTL 기본 600초는 서버의 보류 120초 이후 요청에도 응답할 여유를 둔 임시 설정이며 합의 대상이다.
+
+### 커밋과 원격 반영 결과
+
+1. `ce83aec` — 기존 로컬 OCR의 Pi 초기화/CPU 스레드 수정 보존.
+2. `cc03e00` — 선택적 Edge–Cloud 구현·테스트·README·본 문서 추가.
+3. 후속 문서 커밋 `Document verification results and GitHub authentication blocker` — push 결과 기록.
+   해당 커밋 해시는 `git log -3 --oneline`로 확인할 수 있다.
+
+`git push -u origin raspberrypi`를 실제 시도했으나 다음 인증 오류로 실패했다.
+
+```text
+fatal: could not read Username for 'https://github.com': No such device or address
+```
+
+따라서 **원격 브랜치 생성·업스트림 설정·원격 반영은 미완료**다. 원격 raspberrypi는 사전 조회 시 없었다.
+이 인증 오류 이후 강제 push나 다른 브랜치로의 push는 하지 않았다.
+모든 작업은 로컬 raspberrypi의 커밋에 보존되어 있다. GitHub 인증을 설정한 후 다음 명령으로 재시도한다.
+비밀번호·토큰을 파일이나 명령행 URL에 넣어 커밋하지 않는다.
+
+```bash
+cd ~/SPASIBA
+git switch raspberrypi
+git push -u origin raspberrypi
+```
