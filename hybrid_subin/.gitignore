@@ -3,3 +3,11 @@ outputs/
 models/paddlex/
 __pycache__/
 *.pyc
+config/*.local.json
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.sqlite3*
+camera_check.jpg

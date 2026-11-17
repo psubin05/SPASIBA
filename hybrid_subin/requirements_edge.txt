@@ -1,0 +1,2 @@
+# Optional MQTT integration; does not change OCR model dependencies.
+paho-mqtt>=2.1,<3

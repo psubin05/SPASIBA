@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from paddle_ocr import SubinPaddleOCR
 from pipeline import HybridPlateReader
 from tracking import Tracker
 from visualization import draw_results
+from edge_cloud.runtime import add_arguments, optional_runtime
 
 
 def main():
@@ -30,6 +32,7 @@ def main():
     parser.add_argument("--output", default="outputs/webcam")
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--max-frames", type=int, default=0)
+    add_arguments(parser)
     args = parser.parse_args()
     if args.process_every < 1:
         parser.error("--process-every는 1 이상이어야 합니다")
@@ -54,6 +57,7 @@ def main():
     actual_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     print(f"카메라 실제 해상도: {actual_width}x{actual_height} (요청 {args.width}x{args.height})")
 
+    edge = optional_runtime(args)
     results, frame_index = [], 0
     previous = ()
     print("번호판을 보여주세요. q/ESC 종료, s 화면 저장")
@@ -63,9 +67,19 @@ def main():
             if not ok:
                 break
             if frame_index % args.process_every == 0:
-                current = reader(frame)
+                try:
+                    current = reader(frame)
+                except Exception:
+                    logging.exception("OCR frame failed; retrying on next processing frame")
+                    current = []
+                pairs = tracker.update(current, frame_index)
+                if edge:
+                    try:
+                        edge.observe(pairs)
+                    except Exception:
+                        logging.exception("Edge event deferred; OCR continues")
                 results = []
-                for result, track in tracker.update(current, frame_index):
+                for result, track in pairs:
                     stable = track.best(args.min_votes)
                     item = dict(result)
                     if stable:
@@ -102,6 +116,8 @@ def main():
             if args.max_frames and frame_index >= args.max_frames:
                 break
     finally:
+        if edge:
+            edge.close()
         capture.release()
         if not args.headless:
             cv2.destroyAllWindows()

@@ -1,0 +1,15 @@
+{
+  "zone_id": "B2-A",
+  "camera_id": "CAM-B2-A-01",
+  "host": "",
+  "port": 8883,
+  "tls": true,
+  "database": "outputs/edge/events.sqlite3",
+  "single_slot": null,
+  "rois": {},
+  "min_votes": 5,
+  "publish_on_consensus": false,
+  "crop_enabled": false,
+  "crop_ttl": 600,
+  "status_topic": "spasiba/{zone_id}/{camera_id}/status"
+}

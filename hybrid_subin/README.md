@@ -115,3 +115,22 @@ sha256sum -c MODEL_SHA256SUMS.txt
 - 낮은 해상도에서 사라진 글자 획은 이미지 확대만으로 복원되지 않습니다.
 - `--robust`와 `--tile-detect`는 CPU 처리 시간을 크게 증가시킵니다.
 - AI Hub 및 Roboflow 원본 데이터는 이 폴더에 포함하지 않습니다.
+
+## 선택적 Edge–Cloud MQTT 연동
+
+기존 OCR 단독 실행은 그대로 사용할 수 있습니다. SQLite 재전송 큐, 슬롯별 중복 방지,
+TLS/QoS 1 MQTT, LWT 상태, 선택적 crop 인터페이스를 추가했습니다.
+
+```bash
+cd ~/SPASIBA/hybrid_subin
+source .venv/bin/activate
+python -m pip install -r requirements_edge.txt
+cp config/edge.example.json config/edge.local.json
+# 실제 ID·슬롯 매핑·브로커와 인증 정보를 설정한 다음:
+bash run_pi_camera.sh --mqtt --edge-config config/edge.local.json
+```
+
+기본 설정에서는 슬롯/정차가 확정되지 않으면 이벤트 발행을 보류합니다.
+ROI 예시와 `publish_on_consensus`는 정차/빈 칸 검출 기능이 아닙니다.
+설정·로컬 MQTT 테스트·검증 결과·미합의 사항은
+[Edge–Cloud 구현 기록](docs/EDGE_CLOUD_IMPLEMENTATION.md)을 확인하세요.

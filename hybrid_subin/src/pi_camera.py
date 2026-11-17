@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ from paddle_ocr import SubinPaddleOCR
 from pipeline import HybridPlateReader
 from tracking import Tracker
 from visualization import draw_results
+from edge_cloud.runtime import add_arguments, optional_runtime
 
 
 def parse_args():
@@ -31,6 +33,7 @@ def parse_args():
     parser.add_argument("--display", action="store_true", help="Pi 데스크톱에 OpenCV 창 표시")
     parser.add_argument("--max-frames", type=int, default=0)
     parser.add_argument("--output", default="outputs/pi_camera")
+    add_arguments(parser)
     args = parser.parse_args()
     if args.process_every < 1:
         parser.error("--process-every는 1 이상이어야 합니다")
@@ -76,6 +79,7 @@ def main():
     )
     tracker = Tracker(max_age=max(30, args.process_every * 6))
     camera = configure_camera(args)
+    edge = optional_runtime(args)
     output_dir = Path(args.output)
     frame_index, results, previous = 0, [], ()
     measured_fps = 0.0
@@ -86,9 +90,19 @@ def main():
             rgb = camera.capture_array("main")
             frame = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             if frame_index % args.process_every == 0:
-                current = reader(frame)
+                try:
+                    current = reader(frame)
+                except Exception:
+                    logging.exception("OCR frame failed; retrying on next processing frame")
+                    current = []
+                pairs = tracker.update(current, frame_index)
+                if edge:
+                    try:
+                        edge.observe(pairs)
+                    except Exception:
+                        logging.exception("Edge event deferred; OCR continues")
                 results = []
-                for result, track in tracker.update(current, frame_index):
+                for result, track in pairs:
                     stable = track.best(args.min_votes)
                     item = dict(result)
                     if stable:
@@ -130,6 +144,8 @@ def main():
     except KeyboardInterrupt:
         print("종료합니다.")
     finally:
+        if edge:
+            edge.close()
         camera.stop()
         camera.close()
         if args.display:
