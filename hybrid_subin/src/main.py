@@ -30,9 +30,11 @@ def main():
     if image is None:
         raise SystemExit(f"이미지를 읽을 수 없습니다: {args.image}")
     output = Path(args.output); output.mkdir(parents=True, exist_ok=True)
+    # PaddleOCR must initialize before torch (YOLO) loads; the reverse order segfaults on Raspberry Pi.
+    ocr = SubinPaddleOCR(args.ocr_device, args.robust)
     reader = HybridPlateReader(
         PlateDetector(args.detector_model, args.det_conf, args.det_size, args.device, tiled=args.tile_detect),
-        SubinPaddleOCR(args.ocr_device, args.robust),
+        ocr,
     )
     results = reader(image)
     serializable = [{key: value for key, value in result.items() if key != "crop"} for result in results]

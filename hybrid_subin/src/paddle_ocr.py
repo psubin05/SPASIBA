@@ -18,8 +18,12 @@ os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
 class SubinPaddleOCR:
     """Subin's PP-OCRv5 detector+Korean recognizer, loaded once."""
 
-    def __init__(self, device: str = "cpu", robust: bool = False):
+    def __init__(self, device: str = "cpu", robust: bool = False, cpu_threads: int | None = None):
         from paddleocr import PaddleOCR, TextRecognition
+
+        # PaddleOCR defaults to 10 CPU threads. On a 4-core Raspberry Pi the
+        # bundled OpenBLAS segfaults (sgemm_itcopy) with more threads than cores.
+        cpu_threads = cpu_threads or min(4, os.cpu_count() or 1)
 
         self.model = PaddleOCR(
             device=device,
@@ -29,6 +33,7 @@ class SubinPaddleOCR:
             use_doc_unwarping=False,
             use_textline_orientation=False,
             enable_mkldnn=False,
+            cpu_threads=cpu_threads,
         )
         # Subin's evaluation code also supports recognition-only. It is a useful
         # fallback when the text detector misses a whole, already-cropped plate.
@@ -36,6 +41,7 @@ class SubinPaddleOCR:
             model_name="korean_PP-OCRv5_mobile_rec",
             device=device,
             enable_mkldnn=False,
+            cpu_threads=cpu_threads,
         )
         self.device = device
         self.robust = robust

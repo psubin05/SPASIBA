@@ -67,10 +67,12 @@ def configure_camera(args):
 def main():
     args = parse_args()
     print("plate_v3와 PaddleOCR 모델을 불러오는 중입니다...")
+    # PaddleOCR must initialize before torch (YOLO) loads; the reverse order segfaults on Raspberry Pi.
+    ocr = SubinPaddleOCR(args.ocr_device, args.robust)
     reader = HybridPlateReader(
         PlateDetector(model_path=args.detector_model, confidence=args.det_conf, image_size=args.det_size,
                       device=args.device, tiled=args.tile_detect),
-        SubinPaddleOCR(args.ocr_device, args.robust),
+        ocr,
     )
     tracker = Tracker(max_age=max(30, args.process_every * 6))
     camera = configure_camera(args)

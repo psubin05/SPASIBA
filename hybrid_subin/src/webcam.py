@@ -35,9 +35,11 @@ def main():
         parser.error("--process-every는 1 이상이어야 합니다")
 
     print("plate_v3와 PaddleOCR 모델을 불러오는 중입니다...")
+    # PaddleOCR must initialize before torch (YOLO) loads; the reverse order segfaults on Raspberry Pi.
+    ocr = SubinPaddleOCR(args.ocr_device, args.robust)
     reader = HybridPlateReader(
         PlateDetector(confidence=args.det_conf, image_size=args.det_size, device=args.device, tiled=args.tile_detect),
-        SubinPaddleOCR(args.ocr_device, args.robust),
+        ocr,
     )
     tracker = Tracker(max_age=max(20, args.process_every * 6))
     capture = cv2.VideoCapture(args.camera, cv2.CAP_V4L2)
