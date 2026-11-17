@@ -1,16 +1,162 @@
-# SPASIBA
+# SPASIBA Raspberry Pi ALPR
 
-## 번호판 검출·OCR
+Soogguang의 `plate_v3` 번호판 검출 흐름과 Subin의 PaddleOCR 인식 방식을 결합한 한국 자동차 번호판 인식 모듈입니다.
 
-번호판 검출, 한 줄/두 줄 분리, CTC OCR 학습 및 웹캠 데모는 [`detector/`](detector/)에 있습니다.
-
-```bash
-cd detector
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python verify_bundle.py --full
-python src/webcam_plate_demo.py --camera 0
+```text
+이미지 / USB 웹캠 / Raspberry Pi Camera
+  → plate_v3 (YOLO11n) 번호판 검출
+  → 번호판 crop 및 작은 crop 확대
+  → PP-OCRv5 mobile 글자 영역 검출
+  → korean_PP-OCRv5 mobile 문자 인식
+  → 한국 번호판 형식 검사
+  → 번호판 트랙별 시간 투표
 ```
 
-설치, 데이터 준비, 추가 학습 방법은 [`detector/README.md`](detector/README.md)를 확인하세요.
+기존 `ocr_v1`을 삭제하거나 덮어쓰지 않습니다. PaddleOCR fine-tuning은 수행하지 않으며 공식 사전학습 모델을 첫 실행 때 자동으로 다운로드합니다.
+
+## 폴더 구조
+
+```text
+SPASIBA/
+├── src/                  # 이미지, USB 웹캠, Pi Camera 실행 코드
+├── models/detector/      # plate_v3.pt
+├── tests/                # 후처리·추적·NMS 단위 테스트
+├── docs/                 # 작업 기록
+├── requirements.txt      # Ubuntu/PC
+├── requirements_pi.txt   # Raspberry Pi 참고 의존성
+├── run_webcam.sh
+└── run_pi_camera.sh
+```
+
+## Ubuntu/PC 준비
+
+저장소 루트에서:
+
+```bash
+cd ~/SPASIBA
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install torch torchvision
+python -m pip install paddlepaddle
+python -m pip install -r requirements.txt
+```
+
+GPU용 PyTorch/PaddlePaddle을 사용한다면 각 프로젝트 공식 설치 방법에 맞는 빌드를 먼저 설치하세요. 기존 CUDA 환경을 일반 `pip install`로 덮어쓰지 않는 것을 권장합니다.
+
+## 이미지 실행
+
+```bash
+source .venv/bin/activate
+python src/main.py --image /path/to/car.jpg --output outputs/image
+```
+
+그림자·빛번짐 전처리 후보를 비교하려면 `--robust`를 추가합니다. CPU에서는 매우 느려질 수 있습니다.
+
+## USB 웹캠 실행
+
+```bash
+bash run_webcam.sh --camera 0 --det-size 960 --process-every 3 --min-votes 2
+```
+
+먼 번호판은 타일 검출을 선택할 수 있습니다.
+
+```bash
+bash run_webcam.sh --camera 0 --det-size 640 --tile-detect --process-every 10
+```
+
+- `q`/`ESC`: 종료
+- `s`: 결과 프레임 저장
+
+## Raspberry Pi Camera 실행
+
+64비트 Raspberry Pi OS에서 카메라를 먼저 확인합니다.
+
+```bash
+rpicam-hello --list-cameras
+rpicam-hello -t 3000
+sudo apt update
+sudo apt install -y python3-picamera2 python3-opencv
+```
+
+Picamera2 시스템 패키지를 사용할 수 있게 환경을 만듭니다.
+
+```bash
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install torch torchvision paddlepaddle
+python -m pip install -r requirements_pi.txt
+```
+
+SSH/headless 실행:
+
+```bash
+bash run_pi_camera.sh --width 1920 --height 1080 --fps 15 \
+  --det-size 640 --process-every 10 --min-votes 2
+```
+
+Raspberry Pi 데스크톱에서 화면을 띄우려면 `--display`를 추가합니다. SSH/headless에서는 `Ctrl+C`로 종료합니다.
+
+> Pi 4B에서는 PaddleOCR와 PyTorch YOLO가 무거워 실시간 FPS가 나오지 않을 수 있습니다. 기능 확인 후 ONNX/NCNN 경량화나 서버 추론 구조와 비교해야 합니다.
+
+## 테스트
+
+```bash
+source .venv/bin/activate
+PYTHONPATH=src python -m unittest -v tests/test_core.py
+python -m py_compile src/*.py
+sha256sum -c MODEL_SHA256SUMS.txt
+```
+
+## 현재 한계
+
+- 범용 사전학습 PaddleOCR이므로 실제 주차장 거리·기울기·반사광에 맞춰 fine-tuning된 모델은 아닙니다.
+- 낮은 해상도에서 사라진 글자 획은 이미지 확대만으로 복원되지 않습니다.
+- `--robust`와 `--tile-detect`는 CPU 처리 시간을 크게 증가시킵니다.
+- AI Hub 및 Roboflow 원본 데이터는 이 폴더에 포함하지 않습니다.
+
+## 선택적 Edge–Cloud MQTT 연동
+
+기존 OCR 단독 실행은 그대로 사용할 수 있습니다. SQLite 재전송 큐, 슬롯별 중복 방지,
+TLS/QoS 1 MQTT, LWT 상태, 선택적 crop 인터페이스를 추가했습니다.
+
+```bash
+cd ~/SPASIBA
+source .venv/bin/activate
+python -m pip install -r requirements_edge.txt
+cp config/edge.example.json config/edge.local.json
+# 실제 ID·슬롯 매핑·브로커와 인증 정보를 설정한 다음:
+bash run_pi_camera.sh --mqtt --edge-config config/edge.local.json
+```
+
+기본 설정에서는 슬롯/정차가 확정되지 않으면 이벤트 발행을 보류합니다.
+ROI 예시와 `publish_on_consensus`는 정차/빈 칸 검출 기능이 아닙니다.
+설정·로컬 MQTT 테스트·검증 결과·미합의 사항은
+[Edge–Cloud 구현 기록](docs/EDGE_CLOUD_IMPLEMENTATION.md)을 확인하세요.
+
+## 저장소 구조
+
+현재 실행 코드는 저장소 루트에 있습니다. 이전 `hybrid_subin/`의 파일을 루트로 옮겼습니다.
+
+```text
+SPASIBA/
+├── src/                  # YOLO + PaddleOCR 및 Edge–Cloud
+├── models/               # 검출 모델, 로컬 OCR 캐시
+├── config/               # MQTT·슬롯 설정
+├── docs/                 # 구현 및 작업 문서
+├── tests/
+├── run_pi_camera.sh
+├── run_webcam.sh
+└── legacy/detector/       # 이전 검출/OCR 구현 보관 (현재 기본 실행에서 미사용)
+```
+
+이전 detector 폴더와 루트 README는 `legacy/`에 보존했습니다.
+로컬 가상환경도 `.venv/`로 옮겼으므로 기존에 활성화한 터미널에서는 다시 활성화하세요.
+
+```bash
+cd ~/SPASIBA
+deactivate 2>/dev/null || true
+source .venv/bin/activate
+bash run_pi_camera.sh --width 1280 --height 720 --det-size 640 --process-every 10
+```

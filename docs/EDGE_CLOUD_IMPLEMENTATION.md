@@ -89,10 +89,10 @@
 
 ## 5. Raspberry Pi 실행 방법
 
-아래는 모두 `~/SPASIBA/hybrid_subin` 기준이다. 기존 가상환경을 재생성하거나 모델을 재설치하지 않는다.
+아래는 모두 `~/SPASIBA` 기준이다. 기존 가상환경을 재생성하거나 모델을 재설치하지 않는다.
 
 ```bash
-cd ~/SPASIBA/hybrid_subin
+cd ~/SPASIBA
 source .venv/bin/activate
 python -m pip install -r requirements_edge.txt
 ```
@@ -107,7 +107,7 @@ sudo apt install python3-picamera2 python3-opencv
 ### 기존 OCR 단독 실행
 
 ```bash
-cd ~/SPASIBA/hybrid_subin
+cd ~/SPASIBA
 source .venv/bin/activate
 bash run_pi_camera.sh --width 1280 --height 720 --det-size 640 --process-every 10
 # USB 웹캠용 기존 명령도 유지
@@ -144,7 +144,7 @@ TLS 기본 활성화, 포트 8883, CA/호스트명 검증을 끄는 옵션은 �
 
 ```bash
 sudo apt install mosquitto mosquitto-clients openssl
-cd ~/SPASIBA/hybrid_subin
+cd ~/SPASIBA
 mkdir -p outputs
 cat > outputs/mosquitto-test.conf <<'CONF'
 listener 18883 127.0.0.1
@@ -157,7 +157,7 @@ mosquitto -c outputs/mosquitto-test.conf -v
 **아래 ID는 테스트 전용이며 실제 카메라 설정에 복사해서 쓰지 않는다.**
 
 ```bash
-cd ~/SPASIBA/hybrid_subin
+cd ~/SPASIBA
 source .venv/bin/activate
 unset SPASIBA_HOST SPASIBA_PORT SPASIBA_USERNAME SPASIBA_PASSWORD SPASIBA_CA SPASIBA_CERT SPASIBA_KEY SPASIBA_DATABASE SPASIBA_ZONE_ID SPASIBA_CAMERA_ID SPASIBA_STATUS_TOPIC
 cat > config/test.local.json <<'JSON'
@@ -180,7 +180,7 @@ CLI는 테스트 전용 단일 슬롯을 OCCUPIED로 설정한다. 반복 실행
 ### OCR + MQTT 통합 실행 및 로그
 
 ```bash
-cd ~/SPASIBA/hybrid_subin
+cd ~/SPASIBA
 source .venv/bin/activate
 mkdir -p outputs
 bash run_pi_camera.sh --width 1280 --height 720 --det-size 640 --process-every 10 \
@@ -197,7 +197,7 @@ bash run_pi_camera.sh --width 1280 --height 720 --det-size 640 --process-every 1
 ### 테스트 명령
 
 ```bash
-cd ~/SPASIBA/hybrid_subin
+cd ~/SPASIBA
 source .venv/bin/activate
 python -m unittest discover -s tests -v
 python -m compileall -q src
@@ -269,3 +269,19 @@ cd ~/SPASIBA
 git switch raspberrypi
 git push -u origin raspberrypi
 ```
+
+## 2026-11-18 폴더 구조 정리
+
+사용자 요청으로 `hybrid_subin/` 내부 전체를 `SPASIBA/` 바로 아래로 이동했다.
+기존 detector와 기존 루트 README는 각각 `legacy/detector/`, `legacy/ROOT_README.previous.md`에 보존했다.
+모델·가상환경·로컬 설정·SQLite와 출력 파일도 그대로 옮겼으며 삭제하지 않았다.
+가상환경의 activation 스크립트와 console-script 절대 경로를 새 `.venv` 위치에 맞췄다.
+현재 README 및 문서의 실행 경로는 `~/SPASIBA` 기준이다.
+이전 구현/백업/커밋에 대한 `hybrid_subin` 언급은 당시 경로를 뜻한다.
+
+폴더 이동 후 검증: 새 루트에서 기존 OCR·Edge·실제 로컬 TLS/MQTT 총 30개 테스트 모두 PASS,
+모델 체크섬 PASS, compileall·실행 스크립트 문법·Pi Camera CLI 도움말 PASS.
+이동한 가상환경의 Python과 pip가 `/home/user/SPASIBA/.venv`를 사용하는 것도 확인했다.
+이번 구조 정리에서 카메라 촬영 자체는 다시 실행하지 않았다.
+작업 시작 시에는 `raspberrypi`가 `origin/raspberrypi`를 추적하고 있었다.
+위의 인증 실패 기록은 최초 구현 당시 시도 결과이며, 이후 원격 반영된 상태에서 이번 정리를 시작했다.
