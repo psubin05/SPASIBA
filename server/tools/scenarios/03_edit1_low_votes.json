@@ -1,0 +1,31 @@
+{
+  "name": "03_edit1_low_votes",
+  "description": "한 글자 틀린 인식이지만 votes 3(<5) → 확정하지 않고 보류되는지",
+  "cameras": [
+    {
+      "camera_id": "CAM-B2-A-01"
+    }
+  ],
+  "entries": [
+    {
+      "plate_number": "12가3456"
+    }
+  ],
+  "steps": [
+    {
+      "type": "event",
+      "camera_id": "CAM-B2-A-01",
+      "slot_id": "B2-A-03",
+      "plate_number": "12가3458",
+      "votes": 3,
+      "frames": 10
+    }
+  ],
+  "expect": [
+    {
+      "plate_number": "12가3456",
+      "status": "PENDING",
+      "note": "votes 5 미만 → match_pending, 120초 후 review_queue"
+    }
+  ]
+}

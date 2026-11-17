@@ -1,0 +1,52 @@
+{
+  "name": "07_slot_new_car",
+  "description": "B2-A-04에 있던 차 자리에 다른 차가 들어옴 → 이전 배정은 끝나고 새 차가 확정되는지",
+  "cameras": [
+    {
+      "camera_id": "CAM-B2-A-01"
+    }
+  ],
+  "entries": [
+    {
+      "plate_number": "12가3456"
+    },
+    {
+      "plate_number": "56다7890"
+    }
+  ],
+  "steps": [
+    {
+      "type": "event",
+      "camera_id": "CAM-B2-A-01",
+      "slot_id": "B2-A-04",
+      "plate_number": "12가3456",
+      "votes": 9,
+      "frames": 10
+    },
+    {
+      "type": "wait",
+      "seconds": 1
+    },
+    {
+      "type": "event",
+      "camera_id": "CAM-B2-A-01",
+      "slot_id": "B2-A-04",
+      "plate_number": "56다7890",
+      "votes": 9,
+      "frames": 10
+    }
+  ],
+  "expect": [
+    {
+      "plate_number": "12가3456",
+      "status": "PENDING",
+      "note": "세션 ACTIVE, slot_assignment 종료"
+    },
+    {
+      "plate_number": "56다7890",
+      "status": "CONFIRMED",
+      "slot_id": "B2-A-04",
+      "method": "EXACT"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "08_lwt",
+  "description": "연결 시 status online(retained), 비정상 끊김(DISCONNECT 없이 소켓 종료) 시 브로커가 LWT offline을 내는지",
+  "cameras": [
+    {
+      "camera_id": "CAM-B2-A-01"
+    }
+  ],
+  "entries": [
+    {
+      "plate_number": "78라1234"
+    }
+  ],
+  "steps": [
+    {
+      "type": "event",
+      "camera_id": "CAM-B2-A-01",
+      "slot_id": "B2-A-04",
+      "plate_number": "78라1234",
+      "votes": 9,
+      "frames": 10
+    },
+    {
+      "type": "wait",
+      "seconds": 1
+    },
+    {
+      "type": "disconnect",
+      "camera_id": "CAM-B2-A-01",
+      "abrupt": true
+    }
+  ],
+  "expect": [
+    {
+      "plate_number": "78라1234",
+      "status": "CONFIRMED",
+      "slot_id": "B2-A-04",
+      "method": "EXACT",
+      "note": "끝에 status {\"state\":\"offline\"} (ts 없음 = LWT)"
+    }
+  ]
+}

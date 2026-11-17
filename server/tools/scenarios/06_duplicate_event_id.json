@@ -1,0 +1,42 @@
+{
+  "name": "06_duplicate_event_id",
+  "description": "같은 event_id 재전송(QoS 1 중복) → parking_event가 1건만 저장되는지",
+  "cameras": [
+    {
+      "camera_id": "CAM-B2-A-01"
+    }
+  ],
+  "entries": [
+    {
+      "plate_number": "12가3456"
+    }
+  ],
+  "steps": [
+    {
+      "type": "event",
+      "camera_id": "CAM-B2-A-01",
+      "slot_id": "B2-A-03",
+      "plate_number": "12가3456",
+      "votes": 9,
+      "frames": 10,
+      "event_ref": "e1"
+    },
+    {
+      "type": "wait",
+      "seconds": 0.5
+    },
+    {
+      "type": "event",
+      "repeat_of": "e1"
+    }
+  ],
+  "expect": [
+    {
+      "plate_number": "12가3456",
+      "status": "CONFIRMED",
+      "slot_id": "B2-A-03",
+      "method": "EXACT",
+      "note": "parking_event 1건"
+    }
+  ]
+}

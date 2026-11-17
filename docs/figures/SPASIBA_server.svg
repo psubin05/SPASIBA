@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1035" viewBox="0 0 1600 1035" xmlns:c2pa="http://c2pa.org/manifest">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1035" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+<text x="135" y="48" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#6b7c8f" text-anchor="middle" xml:space="preserve">외부 입력</text>
+<rect x="20" y="70" width="230" height="190" rx="10" fill="#F4F6F8" stroke="#8A99AA" stroke-width="1.5"/>
+<text x="135" y="98" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#2F4A66" text-anchor="middle" xml:space="preserve">Edge 카메라 노드 ×N</text>
+<text x="135" y="124" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">Raspberry Pi + 카메라</text>
+<text x="135" y="145" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">plate_detector → PaddleOCR</text>
+<text x="135" y="166" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">ROI · 정지 · 투표 → slot_id</text>
+<text x="135" y="187" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">MQTT 발행 (QoS 1)</text>
+<text x="135" y="208" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#6b7c8f" text-anchor="middle" xml:space="preserve">AI·IoT 파트 담당</text>
+<rect x="20" y="560" width="230" height="170" rx="10" fill="#F4F6F8" stroke="#8A99AA" stroke-width="1.5"/>
+<text x="135" y="588" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#2F4A66" text-anchor="middle" xml:space="preserve">주차관제 (입·출차)</text>
+<text x="135" y="614" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">시연: 가상 입·출차 기록</text>
+<text x="135" y="635" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">session_id · plate_number</text>
+<text x="135" y="656" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">entered_at · exited_at</text>
+<text x="135" y="677" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#6b7c8f" text-anchor="middle" xml:space="preserve">실제 관제 API로 교체 가능</text>
+<rect x="280" y="20" width="1020" height="990" rx="14" fill="#EEF3F9" stroke="#9DB3CC" stroke-width="1.5"/>
+<text x="296" y="46" font-family="Noto Sans CJK KR" font-size="17" font-weight="500" fill="#2F4A66" text-anchor="start" xml:space="preserve">Cloud — SPASIBA 서버 (FastAPI 단일 배포 · Mosquitto · PostgreSQL)</text>
+<rect x="300" y="62" width="980" height="58" rx="10" fill="#fff" stroke="#2F4A66" stroke-width="2"/>
+<text x="316" y="88" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2F4A66" text-anchor="start" xml:space="preserve">MQTT Broker (Mosquitto)</text>
+<text x="316" y="109" font-family="Noto Sans CJK KR" font-size="12.5" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">TLS 8883 · 노드 인증 · ACL</text>
+<text x="1266" y="88" font-family="Noto Sans Mono CJK KR" font-size="12.5" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">spasiba/{zone_id}/{camera_id}/event · /status</text>
+<text x="1266" y="109" font-family="Noto Sans Mono CJK KR" font-size="12.5" font-weight="700" fill="#D9731A" text-anchor="end" xml:space="preserve">+ /crop_request · /crop  (매칭 실패 시만)</text>
+<rect x="300" y="140" width="500" height="580" rx="12" fill="#EAF2FB" stroke="#2D6CB5" stroke-width="1.5"/>
+<text x="316" y="166" font-family="Noto Sans CJK KR" font-size="16" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">수꽝 — 수신 · DB · 매칭</text>
+<rect x="315" y="180" width="470" height="82" rx="10" fill="#fff" stroke="#2D6CB5" stroke-width="2"/>
+<text x="331" y="206" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">MQTT Subscriber</text>
+<text x="771" y="206" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">spasiba/+/+/event</text>
+<text x="331" y="230" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">형식·등록 관계 검증 → event_id 중복 제거</text>
+<text x="331" y="251" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">→ parking_event 저장 (append-only)</text>
+<rect x="315" y="274" width="470" height="196" rx="10" fill="#fff" stroke="#2D6CB5" stroke-width="2" stroke-dasharray="7 4"/>
+<text x="331" y="300" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">Matching Engine</text>
+<rect x="479.0" y="284" width="40" height="20" rx="10" fill="#D9731A" stroke="none" stroke-width="0"/>
+<text x="499.0" y="298.5" font-family="Noto Sans CJK KR" font-size="11.5" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">추가</text>
+<text x="331" y="324" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">① 진행 중 입차 세션과 번호 비교</text>
+<text x="331" y="345" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">     정확히 일치 1대 → 확정</text>
+<text x="331" y="366" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">     1글자 차이 1대 + 여러 이벤트 반복 → 확정</text>
+<text x="331" y="387" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">② 그 외 → 보류  (사용자에겐 “위치 확인 중”)</text>
+<text x="331" y="408" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">③ 시간 초과 → review_queue 등록 + crop 요청</text>
+<text x="331" y="429" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">     확정되면 slot_assignment 기록</text>
+<rect x="315" y="482" width="470" height="68" rx="10" fill="#fff" stroke="#2D6CB5" stroke-width="2" stroke-dasharray="7 4"/>
+<text x="331" y="508" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">Entry / Exit API</text>
+<rect x="488.2" y="492" width="40" height="20" rx="10" fill="#D9731A" stroke="none" stroke-width="0"/>
+<text x="508.2" y="506.5" font-family="Noto Sans CJK KR" font-size="11.5" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">추가</text>
+<text x="771" y="508" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">POST /entries · /exits</text>
+<text x="331" y="532" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">입차 → 세션 생성 · 출차 → 세션 종료 (조회 제외)</text>
+<rect x="315" y="562" width="470" height="68" rx="10" fill="#fff" stroke="#2D6CB5" stroke-width="2" stroke-dasharray="7 4"/>
+<text x="331" y="588" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">Admin Review API</text>
+<rect x="488.2" y="572" width="40" height="20" rx="10" fill="#D9731A" stroke="none" stroke-width="0"/>
+<text x="508.2" y="586.5" font-family="Noto Sans CJK KR" font-size="11.5" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">추가</text>
+<text x="771" y="588" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">GET·POST /admin/reviews</text>
+<text x="331" y="612" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">crop 사진 + 후보 세션 → 관리자가 선택해 확정</text>
+<rect x="315" y="642" width="470" height="68" rx="10" fill="#fff" stroke="#2D6CB5" stroke-width="2"/>
+<text x="331" y="668" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">Vehicle Search</text>
+<text x="771" y="668" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">GET /vehicles/{plate}/last-location</text>
+<text x="331" y="692" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">slot_assignment 우선 → 없으면 최근 event · 보류면 구역</text>
+<rect x="840" y="140" width="440" height="580" rx="12" fill="#E8F5F3" stroke="#1E7F74" stroke-width="1.5"/>
+<text x="856" y="166" font-family="Noto Sans CJK KR" font-size="16" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">떵개 — 지도 · 경로</text>
+<rect x="855" y="180" width="410" height="82" rx="10" fill="#fff" stroke="#1E7F74" stroke-width="2"/>
+<text x="871" y="206" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">Map Cache</text>
+<text x="871" y="230" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">지도 데이터 → 메모리 그래프 (서버 시작 시)</text>
+<text x="871" y="251" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">노드 좌표 · 인접 리스트 · slot → node</text>
+<rect x="855" y="274" width="410" height="82" rx="10" fill="#fff" stroke="#1E7F74" stroke-width="2"/>
+<text x="871" y="300" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">QR Location Resolver</text>
+<text x="1251" y="300" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">GET /qr/{location_id}</text>
+<text x="871" y="324" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">qr_location → 출발 노드 · 층</text>
+<text x="871" y="345" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">없는 ID → 오류 + 재스캔 안내</text>
+<rect x="855" y="368" width="410" height="124" rx="10" fill="#fff" stroke="#1E7F74" stroke-width="2"/>
+<text x="871" y="394" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">Route Guidance</text>
+<text x="1251" y="394" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">GET /route?from=&amp;to=</text>
+<text x="871" y="418" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">Dijkstra: 출발 노드 → parking_slot.node_id</text>
+<text x="871" y="439" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">(인터페이스 고정, A*로 교체 가능)</text>
+<text x="871" y="460" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">꺾이는 지점마다 좌·우·직진 → 안내문</text>
+<text x="871" y="481" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">응답: 좌표 경로 · 총 거리 · 이동 순서</text>
+<rect x="855" y="504" width="410" height="68" rx="10" fill="#fff" stroke="#1E7F74" stroke-width="2" stroke-dasharray="7 4"/>
+<text x="871" y="530" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">Map API</text>
+<rect x="945.4" y="514" width="40" height="20" rx="10" fill="#D9731A" stroke="none" stroke-width="0"/>
+<text x="965.4" y="528.5" font-family="Noto Sans CJK KR" font-size="11.5" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">추가</text>
+<text x="1251" y="530" font-family="Noto Sans Mono CJK KR" font-size="12" font-weight="500" fill="#6b7c8f" text-anchor="end" xml:space="preserve">GET /map?floor=</text>
+<text x="871" y="554" font-family="Noto Sans CJK KR" font-size="13.5" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">웹이 지도를 그릴 노드·간선·주차면 좌표</text>
+<rect x="855" y="584" width="410" height="126" rx="10" fill="#fff" stroke="#1E7F74" stroke-width="1.5" stroke-dasharray="3 3"/>
+<text x="871" y="610" font-family="Noto Sans CJK KR" font-size="14.5" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">시연 전 준비 (오프라인)</text>
+<text x="871" y="634" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">모형 도면 측정 → map/b2.json 작성</text>
+<text x="871" y="655" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">검증 스크립트 (끊긴 노드 · 노드 없는 주차면)</text>
+<text x="871" y="676" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="start" xml:space="preserve">→ DB 적재 · 카메라 ROI 보정 (Edge와 함께)</text>
+<rect x="300" y="760" width="980" height="230" rx="10" fill="#fff" stroke="#2F4A66" stroke-width="2"/>
+<text x="316" y="788" font-family="Noto Sans CJK KR" font-size="15.5" font-weight="700" fill="#2F4A66" text-anchor="start" xml:space="preserve">Cloud DB (PostgreSQL)  — Single Shared DB</text>
+<rect x="315" y="802" width="300" height="172" rx="8" fill="#EAF2FB" stroke="#2D6CB5" stroke-width="1.5"/>
+<text x="329" y="828" font-family="Noto Sans CJK KR" font-size="14" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">인식 기록</text>
+<text x="329" y="856" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">parking_event</text>
+<text x="329" y="874" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">event_id 고유 · (plate, recognized_at) 인덱스</text>
+<text x="329" y="896" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve"></text>
+<text x="329" y="914" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve"></text>
+<rect x="630" y="802" width="330" height="172" rx="8" fill="#EAF2FB" stroke="#2D6CB5" stroke-width="1.5" stroke-dasharray="7 4"/>
+<text x="644" y="828" font-family="Noto Sans CJK KR" font-size="14" font-weight="700" fill="#2D6CB5" text-anchor="start" xml:space="preserve">입차 세션 · 매칭  (추가)</text>
+<text x="644" y="856" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">entry_session</text>
+<text x="644" y="874" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">session_id · plate · entered_at · exited_at</text>
+<text x="644" y="896" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">slot_assignment</text>
+<text x="644" y="914" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">session ↔ slot_id · 확정 시각 · 근거</text>
+<text x="644" y="936" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">review_queue</text>
+<text x="644" y="954" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">crop · slot · 후보 세션 · 처리 상태</text>
+<rect x="975" y="802" width="290" height="172" rx="8" fill="#E8F5F3" stroke="#1E7F74" stroke-width="1.5"/>
+<text x="989" y="828" font-family="Noto Sans CJK KR" font-size="14" font-weight="700" fill="#1E7F74" text-anchor="start" xml:space="preserve">주차면 · 지도</text>
+<text x="989" y="856" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">parking_slot · zone · camera</text>
+<text x="989" y="874" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">slot_id · ROI · node_id</text>
+<text x="989" y="896" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">map_node · map_edge</text>
+<text x="989" y="914" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">좌표 · 보행 거리</text>
+<text x="989" y="936" font-family="Noto Sans Mono CJK KR" font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="start" xml:space="preserve">qr_location</text>
+<text x="989" y="954" font-family="Noto Sans CJK KR" font-size="12" font-weight="400" fill="#6b7c8f" text-anchor="start" xml:space="preserve">location_id → node_id</text>
+<text x="1455" y="48" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#6b7c8f" text-anchor="middle" xml:space="preserve">사용자 · 관리자</text>
+<rect x="1330" y="70" width="250" height="300" rx="10" fill="#F4F6F8" stroke="#8A99AA" stroke-width="1.5"/>
+<text x="1455" y="98" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#2F4A66" text-anchor="middle" xml:space="preserve">Mobile Web (이용자)</text>
+<text x="1455" y="126" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">QR 스캔 → 출발 위치</text>
+<text x="1455" y="149" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">차량번호 검색</text>
+<text x="1455" y="172" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">주차면 · 층 · 확인 시각</text>
+<text x="1455" y="195" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">지도 위 보행 경로</text>
+<text x="1455" y="218" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">이동 순서 안내</text>
+<text x="1455" y="241" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#D9731A" text-anchor="middle" xml:space="preserve">보류 중: “위치 확인 중”</text>
+<text x="1455" y="264" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#D9731A" text-anchor="middle" xml:space="preserve">+ 구역까지 안내</text>
+<rect x="1330" y="570" width="250" height="190" rx="10" fill="#F4F6F8" stroke="#8A99AA" stroke-width="1.5" stroke-dasharray="7 4"/>
+<text x="1455" y="598" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#2F4A66" text-anchor="middle" xml:space="preserve">Admin Page (관리자)</text>
+<rect x="1430" y="608" width="40" height="20" rx="10" fill="#D9731A" stroke="none" stroke-width="0"/>
+<text x="1450.0" y="622.5" font-family="Noto Sans CJK KR" font-size="11.5" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">추가</text>
+<text x="1455" y="652" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">확인 필요 목록</text>
+<text x="1455" y="675" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">crop 사진 ↔ 후보 번호 대조</text>
+<text x="1455" y="698" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">세션 선택 → 확정</text>
+<text x="1455" y="721" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#6b7c8f" text-anchor="middle" xml:space="preserve">관리자 계정만 접근</text>
+<rect x="1330" y="420" width="250" height="105" rx="10" fill="#F4F6F8" stroke="#8A99AA" stroke-width="1.5"/>
+<text x="1455" y="450" font-family="Noto Sans CJK KR" font-size="15" font-weight="700" fill="#2F4A66" text-anchor="middle" xml:space="preserve">QR Code</text>
+<text x="1455" y="476" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">출입구 · 키오스크 부착</text>
+<text x="1455" y="499" font-family="Noto Sans CJK KR" font-size="13" font-weight="400" fill="#1f2d3d" text-anchor="middle" xml:space="preserve">출발 위치 ID 포함 URL</text>
+<path d="M250,120 L300,95" fill="none" stroke="#3E5C7A" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M700,120 L700,180" fill="none" stroke="#3E5C7A" stroke-width="2.5" marker-end="url(#ah)"/>
+<rect x="713.15" y="139" width="77.7" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="752" y="154" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#3E5C7A" text-anchor="middle" xml:space="preserve">Subscribe</text>
+<path d="M550,262 L550,274" fill="none" stroke="#2D6CB5" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M315,430 L275,430 L275,230 L250,230" fill="none" stroke="#D9731A" stroke-width="2.5" marker-end="url(#ah)" stroke-dasharray="6 4"/>
+<rect x="244.4" y="320" width="41.2" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="265" y="335" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#D9731A" text-anchor="middle" xml:space="preserve">crop</text>
+<path d="M250,645 L315,516" fill="none" stroke="#2D6CB5" stroke-width="2.5" marker-end="url(#ah)"/>
+<rect x="261.4" y="545" width="41.2" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="282" y="560" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#2D6CB5" text-anchor="middle" xml:space="preserve">REST</text>
+<path d="M700,720 L700,802" fill="none" stroke="#2D6CB5" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<path d="M1200,720 L1200,802" fill="none" stroke="#1E7F74" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<path d="M1060,262 L1060,274" fill="none" stroke="#1E7F74" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M1060,356 L1060,368" fill="none" stroke="#1E7F74" stroke-width="2.5" marker-end="url(#ah)"/>
+<path d="M1265,315 L1330,200" fill="none" stroke="#1E7F74" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<path d="M1265,430 L1330,280" fill="none" stroke="#1E7F74" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<path d="M1265,538 L1330,340" fill="none" stroke="#1E7F74" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)" stroke-dasharray="6 4"/>
+<rect x="1277.75" y="223" width="48.5" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="1302" y="238" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#3E5C7A" text-anchor="middle" xml:space="preserve">HTTPS</text>
+<path d="M1330,355 L1292,355 L1292,735 L812,735 L812,676 L785,676" fill="none" stroke="#2D6CB5" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<rect x="1016.25" y="724" width="267.5" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="1150" y="739" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#2D6CB5" text-anchor="middle" xml:space="preserve">GET /vehicles/{plate}/last-location</text>
+<path d="M1330,665 L1310,665 L1310,750 L826,750 L826,596 L785,596" fill="none" stroke="#2D6CB5" stroke-width="2.5" marker-end="url(#ah)" marker-start="url(#ah)" stroke-dasharray="6 4"/>
+<rect x="917.85" y="739" width="84.3" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="960" y="754" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#2D6CB5" text-anchor="middle" xml:space="preserve">관리자 확인</text>
+<path d="M1455,420 L1455,370" fill="none" stroke="#8A99AA" stroke-width="2.5" marker-end="url(#ah)"/>
+<rect x="1481.0" y="385" width="38.0" height="21" rx="4" fill="#fff" stroke="none" stroke-width="0"/>
+<text x="1500" y="400" font-family="Noto Sans CJK KR" font-size="12" font-weight="500" fill="#3E5C7A" text-anchor="middle" xml:space="preserve">스캔</text>
+<rect x="300" y="1009" width="16" height="16" rx="3" fill="#EAF2FB" stroke="#2D6CB5" stroke-width="2"/>
+<text x="324" y="1022" font-family="Noto Sans CJK KR" font-size="13" font-weight="500" fill="#2D6CB5" text-anchor="start" xml:space="preserve">수꽝 (수신 · DB · 매칭)</text>
+<rect x="500" y="1009" width="16" height="16" rx="3" fill="#E8F5F3" stroke="#1E7F74" stroke-width="2"/>
+<text x="524" y="1022" font-family="Noto Sans CJK KR" font-size="13" font-weight="500" fill="#1E7F74" text-anchor="start" xml:space="preserve">떵개 (지도 · 경로)</text>
+<rect x="670" y="1009" width="16" height="16" rx="3" fill="#F4F6F8" stroke="#8A99AA" stroke-width="2"/>
+<text x="694" y="1022" font-family="Noto Sans CJK KR" font-size="13" font-weight="500" fill="#6b7c8f" text-anchor="start" xml:space="preserve">다른 파트 · 외부</text>
+<rect x="830" y="1009" width="16" height="16" rx="3" fill="#fff" stroke="#2F4A66" stroke-width="2" stroke-dasharray="4 3"/>
+<text x="854" y="1022" font-family="Noto Sans CJK KR" font-size="13" font-weight="500" fill="#D9731A" text-anchor="start" xml:space="preserve">점선 · 추가 = 명세서 v1.2 이후 추가</text>
+<text x="1580" y="1022" font-family="Noto Sans CJK KR" font-size="13" font-weight="500" fill="#4a5a6b" text-anchor="end" xml:space="preserve">그림 3-3. SPASIBA 서버 구성</text>
+<metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYToxN2I1N2JkZi01NDk1LTQ0MWQtOWZkNC1kOTdjNTVjMTRhZDEAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaL/Aj0sNH8K5dkZ9xsxV+6IAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDplOWU4OWJiNS1mMmFmLTRmMTctYmQ0Yy1mNjgxMjI1ZjRhYjVscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNo8M/IiNR0HOcrrAAwVbJODwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggVwNoRHS7a65QvytI4RXrK7lX1u3YtUUDemW2dgBOBnukZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaCia+NjsVdTgXtiSXoODUzkAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRMAAAAAAAAAAAAAAAAZGhhc2hYIA8kvOdakkxLjPvFDDUncJY8cznlM2m9+W2BPPKLYRCjZG5hbWVuanVtYmYgbWFuaWZlc3RqZXhjbHVzaW9uc4GiZXN0YXJ0GWlTZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjE3YjU3YmRmLTU0OTUtNDQxZC05ZmQ0LWQ5N2M1NWMxNGFkMS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjI3MTJkYzIyLWI4ZWEtNDQwYS04ZmIxLWNiMzRkMzM5ZDg3OHJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBXA2hEdLtrrlC/K0jhFesruVfW7di1RQN6ZbZ2AE4Ge6JjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggWvNXXoNWrlaWRdQ7JWQfUOAg4Sop7L4w/BkVAF90ADOiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggZ0CIUSrJjrvL5l+BCttw9D+zbAEBSfKWG48a22lJrW50Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQCM5xndewhVfYOAIcr0tfsshvk5Xo2iEaBqzM+f+TXJv/jx0ktPMR1MWn0Shni4lszpwnMaTuMu7ltT4gmx/CPE=</c2pa:manifest></metadata></svg>
