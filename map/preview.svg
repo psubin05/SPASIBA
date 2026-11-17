@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 0 23 6">
+<rect x="-1000" y="-1000" width="2000" height="2000" fill="white"/>
+<line x1="0" y1="3" x2="3" y2="3" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="3" y1="3" x2="7" y2="3" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="7" y1="3" x2="11" y2="3" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="11" y1="3" x2="15" y2="3" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="15" y1="3" x2="19" y2="3" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="7" y1="3" x2="7" y2="2" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="11" y1="3" x2="11" y2="2" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="15" y1="3" x2="15" y2="2" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="19" y1="3" x2="19" y2="2" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="7" y1="3" x2="7" y2="4" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="11" y1="3" x2="11" y2="4" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="15" y1="3" x2="15" y2="4" stroke="#a5b8c9" stroke-width="0.07"/>
+<line x1="19" y1="3" x2="19" y2="4" stroke="#a5b8c9" stroke-width="0.07"/>
+<circle cx="0" cy="3" r="0.09" fill="#126b66"/><text x="0" y="2.8" text-anchor="middle" font-size="0.22">ENT1</text>
+<circle cx="3" cy="3" r="0.09" fill="#126b66"/><text x="3" y="2.8" text-anchor="middle" font-size="0.22">J1</text>
+<circle cx="7" cy="3" r="0.09" fill="#126b66"/><text x="7" y="2.8" text-anchor="middle" font-size="0.22">J2</text>
+<circle cx="11" cy="3" r="0.09" fill="#126b66"/><text x="11" y="2.8" text-anchor="middle" font-size="0.22">J3</text>
+<circle cx="15" cy="3" r="0.09" fill="#126b66"/><text x="15" y="2.8" text-anchor="middle" font-size="0.22">J4</text>
+<circle cx="19" cy="3" r="0.09" fill="#126b66"/><text x="19" y="2.8" text-anchor="middle" font-size="0.22">J5</text>
+<circle cx="7" cy="2" r="0.09" fill="#126b66"/><text x="7" y="1.8" text-anchor="middle" font-size="0.22">N-A01</text>
+<circle cx="11" cy="2" r="0.09" fill="#126b66"/><text x="11" y="1.8" text-anchor="middle" font-size="0.22">N-A02</text>
+<circle cx="15" cy="2" r="0.09" fill="#126b66"/><text x="15" y="1.8" text-anchor="middle" font-size="0.22">N-A03</text>
+<circle cx="19" cy="2" r="0.09" fill="#126b66"/><text x="19" y="1.8" text-anchor="middle" font-size="0.22">N-A04</text>
+<circle cx="7" cy="4" r="0.09" fill="#126b66"/><text x="7" y="3.8" text-anchor="middle" font-size="0.22">N-B01</text>
+<circle cx="11" cy="4" r="0.09" fill="#126b66"/><text x="11" y="3.8" text-anchor="middle" font-size="0.22">N-B02</text>
+<circle cx="15" cy="4" r="0.09" fill="#126b66"/><text x="15" y="3.8" text-anchor="middle" font-size="0.22">N-B03</text>
+<circle cx="19" cy="4" r="0.09" fill="#126b66"/><text x="19" y="3.8" text-anchor="middle" font-size="0.22">N-B04</text>
+</svg>
