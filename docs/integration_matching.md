@@ -69,7 +69,8 @@ Docker 자체 실행은 환경이 없어 검증하지 못했다.
 
 `python -m tools.verify`는 기존 수빈 회귀 테스트, Node 화면 코드 테스트,
 수인 서버 pytest와 새 통합 테스트를 별도 프로세스에서 실행한다.
-관리자 REST API는 수인 원본의 501을 유지한다. 내부 처리 함수만 준비된 상태다.
+관리자 REST API는 이후 첨부 v0.4 재점검에서 Bearer 인증과 함께 구현했다.
+현재 변경·검증 범위는 interface_audit_v0.4.md를 참고한다.
 실제 PostgreSQL·브로커 연결 테스트는 해당 환경이 없으면 skip되므로
 로컬 SQLite/함수 기반 MQTT 통과와 구분한다.
 휴대폰·실제 QR 스캔·실물 OCR·브라우저 시각 검증도 별도로 진행해야 한다.

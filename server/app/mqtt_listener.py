@@ -96,6 +96,9 @@ class MqttListener:
         return datetime.now(ZoneInfo(self.settings.timezone))
 
     def start(self) -> None:
+        self._stop.clear()
+        self._ticker = threading.Thread(target=self._tick_loop, name="spasiba-match-tick", daemon=True)
+        self._ticker.start()
         if not self.settings.mqtt_enabled:
             log.info("MQTT 비활성화 (MQTT_ENABLED=false)")
             return
@@ -105,7 +108,7 @@ class MqttListener:
         if self.settings.mqtt_username:
             client.username_pw_set(self.settings.mqtt_username, self.settings.mqtt_password)
         if self.settings.mqtt_tls:
-            client.tls_set()
+            client.tls_set(ca_certs=self.settings.mqtt_ca_cert)
         client.on_connect = self._on_connect
         client.on_disconnect = self._on_disconnect
         client.on_message = self._on_message
@@ -114,8 +117,6 @@ class MqttListener:
         client.connect_async(self.settings.mqtt_host, self.settings.mqtt_port, keepalive=30)
         client.loop_start()
         self.client = client
-        self._ticker = threading.Thread(target=self._tick_loop, name="spasiba-match-tick", daemon=True)
-        self._ticker.start()
 
     def stop(self) -> None:
         self._stop.set()
@@ -127,8 +128,7 @@ class MqttListener:
 
     def _tick_loop(self) -> None:
         while not self._stop.wait(TICK_SECONDS):
-            if self.connected:
-                self.handler.tick(self._now())
+            self.handler.tick(self._now())
 
     def _publish(self, topic: str, payload: dict) -> None:
         if self.client is None:

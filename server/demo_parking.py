@@ -5,19 +5,18 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import re
 import sqlite3
-import unicodedata
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 REGIONS = ('서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주')
-PLATE = re.compile(r'^(?:' + '|'.join(REGIONS) + r')?[0-9]{2,3}[가-힣][0-9]{4}$')
+from .app.plates import USE_CHARS, normalize as normalize_v04
+PLATE = re.compile(r'^(?:' + '|'.join(REGIONS) + r')?[0-9]{2,3}[' + USE_CHARS + r'][0-9]{4}$')
 
 
 def normalize_plate(value):
-    value = unicodedata.normalize('NFKC', value)
-    return re.sub(r'[\s\-·]', '', value)
+    return normalize_v04(value)
 
 
 def checked_plate(value):
@@ -89,7 +88,7 @@ class EventInput(BaseModel):
     event_id: UUID
     plate_number: str = Field(max_length=32)
     camera_id: str
-    zone_id: str
+    zone_id: str | None = None  # old senders accepted; derived from registered slot
     slot_id: str
     recognized_at: datetime
     votes: int | None = Field(default=None, ge=0, le=10)
@@ -192,7 +191,7 @@ class DemoParking:
         plate = normalize_plate(event.plate_number)
         timestamp = event.recognized_at.astimezone(timezone.utc).isoformat(timespec='microseconds')
         future = event.recognized_at > datetime.now(timezone.utc) + timedelta(seconds=30)
-        valid = bool(not future and slot and slot['camera_id'] == event.camera_id and slot['zone_id'] == event.zone_id and PLATE.fullmatch(plate))
+        valid = bool(not future and slot and slot['camera_id'] == event.camera_id and PLATE.fullmatch(plate))
         with self.db() as db:
             if db.execute('SELECT 1 FROM demo_event WHERE event_id=?', (str(event.event_id),)).fetchone():
                 return {'event_id': str(event.event_id), 'status': 'DUPLICATE'}

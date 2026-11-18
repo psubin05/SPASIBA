@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from app.models import ParkingEvent, ReviewQueue
+from tools.fake_pi_messages import DUMMY_JPEG
 from app.mqtt_listener import SUBSCRIPTIONS, MessageHandler
 
 KST = timezone(timedelta(hours=9))
@@ -74,7 +75,7 @@ def test_tick_publishes_crop_request_and_crop_reply_saved(app_client):
     (topic, req), = sent
     assert topic == f"spasiba/{CAM}/crop_request" and req["reason"] == "unmatched"
     crop = json.dumps({**req, "captured_at": T0.isoformat(),
-                       "image_jpeg_base64": base64.b64encode(b"\xff\xd8\xff\xd9").decode()}).encode()
+                       "image_jpeg_base64": base64.b64encode(DUMMY_JPEG).decode()}).encode()
     assert h.handle(f"spasiba/{CAM}/crop", crop, now=T0) == "crop_saved"
     assert h.handle(f"spasiba/{CAM}/crop", crop.replace(b"r-", b"x-"), now=T0) == "crop_ignored"
     with app_client.app.state.db.SessionLocal() as db:

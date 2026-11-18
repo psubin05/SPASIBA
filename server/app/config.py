@@ -28,12 +28,14 @@ class Settings:
 
     simulator_enabled: bool = False
     seed_sample_map: bool = False
+    mqtt_ca_cert: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
             simulator_enabled=_bool(os.getenv("SIMULATOR_ENABLED"), False),
             seed_sample_map=_bool(os.getenv("SEED_SAMPLE_MAP"), False),
+            mqtt_ca_cert=os.getenv('MQTT_CA_CERT') or None,
             database_url=os.getenv("DATABASE_URL", "sqlite:///./spasiba_dev.db"),
             mqtt_enabled=_bool(os.getenv("MQTT_ENABLED"), False),
             mqtt_host=os.getenv("MQTT_HOST", "localhost"),

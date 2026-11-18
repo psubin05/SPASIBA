@@ -53,5 +53,12 @@ function frame(time){const fns=[...queued.values()];queued.clear();for(const fn 
   context.fetch=async()=>({ok:true,json:async()=>{throw Error('invalid json');}});
   await get('searchVehicle').onclick();assert.equal(get('play').disabled,true);assert.match(get('status').textContent,/응답 형식/);
   context.fetch=originalFetch;
+  context.crypto=require('node:crypto').webcrypto;
+  vm.runInContext('demoEnabled=true;vehicleApiEnabled=true;sharedBackend=true;',context);
+  let submitted;
+  context.fetch=async(url,options)=>{if(url==='/simulator/events'){submitted=JSON.parse(options.body);return {ok:true,json:async()=>({status:'assigned'})};}if(url.startsWith('/entries?'))return {ok:true,json:async()=>[]};return originalFetch(url,options);};
+  get('observedPlate').value='12가3456';get('destination').value='B2-A-03';await get('parkVehicle').onclick();
+  assert.ok(submitted.event_id);assert.equal(submitted.camera_id,'CAM-B2-01');assert.ok(!('zone_id' in submitted));
+  assert.match(get('operatorStatus').textContent,/주차 위치 확정/);
   console.log('PASS: 3D/playback, PENDING/404 gates, confirmed route, stale response ignored, malformed path/JSON and timeout recovery');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -40,6 +40,8 @@ class FakePi:
         self.published: list[dict] = []
         self._events_by_ref: dict[str, tuple[str, dict]] = {}
         self._last_event_by_slot: dict[str, str] = {}
+        self._last_camera_by_slot: dict[str, str] = {}
+        self._last_event_at_by_slot: dict[str, float] = {}
         self._pending: dict[str, list] = {}
 
     # ---- 발행 ----
@@ -149,6 +151,8 @@ class FakePi:
         if latest is None or req.get("event_id") != latest:
             log.warning("crop_request event_id 불일치, 응답 안 함: %s %s", req["slot_id"], req.get("event_id"))
             return None
+        if self._last_camera_by_slot.get(req['slot_id']) != camera_id or time.monotonic() - self._last_event_at_by_slot.get(req['slot_id'], 0) > 600:
+            return None
         crop = build_crop(req)
         return crop if self._publish(camera_id, "crop", crop) else None
 
@@ -177,6 +181,8 @@ class FakePi:
                 if step.get("event_ref"):
                     self._events_by_ref[step["event_ref"]] = (camera_id, payload)
                 self._last_event_by_slot[payload["slot_id"]] = payload["event_id"]
+                self._last_camera_by_slot[payload['slot_id']] = camera_id
+                self._last_event_at_by_slot[payload['slot_id']] = time.monotonic()
             self._publish(camera_id, "event", payload)
         elif kind == "status":
             self._publish(step["camera_id"], "status", build_status(step["state"]), retain=True)

@@ -17,7 +17,7 @@ from .config import Settings
 from .db import Database
 from .mqtt_listener import MqttListener
 from .parking import ParkingError
-from .routers import parking, stubs, maps, simulator
+from .routers import parking, admin, maps, simulator
 from .map_service import seed_sample, ROOT
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -33,14 +33,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database.create_all()
         if settings.seed_sample_map:
             seed_sample(database)
-        mqtt.start()
         try:
+            mqtt.start()
             yield
         finally:
             mqtt.stop()
             database.engine.dispose()
 
-    app = FastAPI(title="SPASIBA Cloud API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="SPASIBA Cloud API", version="0.4.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.db = database
     app.state.mqtt = mqtt
@@ -78,7 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "code": "INVALID_REQUEST", "message": "요청 값을 확인해 주세요: " + ", ".join(f for f in fields if f)}})
 
     app.include_router(parking.router)
-    app.include_router(stubs.admin)
+    app.include_router(admin.router)
     app.include_router(maps.router)
     app.include_router(simulator.router)
     return app

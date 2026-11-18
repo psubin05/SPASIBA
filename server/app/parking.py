@@ -9,6 +9,8 @@ from __future__ import annotations
 import base64
 import binascii
 import logging
+import io
+import re
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -17,6 +19,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from PIL import Image, UnidentifiedImageError
 
 from .config import Settings
 from .matching import Candidate, decide
@@ -28,7 +31,8 @@ log = logging.getLogger("spasiba.parking")
 
 REQUIRED = ("plate_number", "camera_id", "slot_id", "recognized_at")
 KINDS = ("confirm", "recheck")
-CROP_MAX_BYTES = 200_000  # 인터페이스는 100KB 이하. 여유를 두고 그보다 크면 버림
+CROP_MAX_BYTES = 100_000  # interface 2.4: 100 KB (decimal) maximum
+CROP_MAX_SIDE = 640
 
 
 class ParkingError(Exception):
@@ -139,9 +143,23 @@ def exit_session(db: Session, cfg: Settings, now: datetime, plate_number: str | 
     if open_a is not None:
         open_a.ended_at = now
     sid = str(session.session_id)
-    for review in db.scalars(select(ReviewQueue).where(ReviewQueue.status == "OPEN")):
-        if any(c.get("session_id") == sid for c in review.candidates):
-            review.candidates = [c for c in review.candidates if c.get("session_id") != sid]
+    remaining = _candidates(db, cfg)
+    for pending in list(db.scalars(select(MatchPending))):
+        kept = [r for r in pending.reads if not (
+            edit_distance(r.get('plate_norm', ''), session.plate_norm) <= 1
+            and not any(edit_distance(r.get('plate_norm', ''), c.plate_norm) <= 1 for c in remaining))]
+        if len(kept) != len(pending.reads):
+            if kept:
+                pending.reads = kept
+            else:
+                db.delete(pending)
+    for review in db.scalars(select(ReviewQueue)):
+        related = review.resolved_session_id == session.session_id or any(c.get('session_id') == sid for c in review.candidates) or any(r.get('plate_norm') == session.plate_norm for r in review.read_plates)
+        if related:
+            _delete_crop(review)
+            review.candidates = [c for c in review.candidates if c.get('session_id') != sid]
+            if review.status == 'OPEN' and not review.candidates:
+                review.status, review.resolved_at = 'DISMISSED', now
     db.commit()
     return session
 
@@ -171,9 +189,17 @@ def handle_event(db: Session, cfg: Settings, topic_camera_id: str, payload, now:
         return "duplicate"
 
     reasons = []
+    try:
+        if uuid.UUID(event_id).version != 4:
+            reasons.append('event_id는 UUID v4여야 합니다.')
+    except ValueError:
+        reasons.append('event_id는 UUID v4여야 합니다.')
     missing = [k for k in REQUIRED if payload.get(k) in (None, "")]
     if missing:
         reasons.append("필수 필드 없음: " + ", ".join(missing))
+    for key in REQUIRED:
+        if key not in missing and not isinstance(payload.get(key), str):
+            reasons.append(f'{key}는 문자열이어야 합니다.')
     plate_number = payload.get("plate_number") if isinstance(payload.get("plate_number"), str) else ""
     norm = normalize(plate_number)
     camera_id = payload.get("camera_id") if isinstance(payload.get("camera_id"), str) else topic_camera_id
@@ -185,12 +211,16 @@ def handle_event(db: Session, cfg: Settings, topic_camera_id: str, payload, now:
         recognized_at = now
     if camera_id != topic_camera_id:
         reasons.append(f"토픽 camera_id({topic_camera_id})와 본문({camera_id})이 다름")
+    if re.fullmatch(r'CAM-[A-Za-z0-9]+-[0-9]{2}', camera_id) is None:
+        reasons.append('camera_id는 CAM-{층}-{번호2자리} 형식이어야 합니다.')
     votes, frames = (payload.get(k) for k in ("votes", "frames"))
     for name, value in (("votes", votes), ("frames", frames)):
-        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10):
             reasons.append(f"{name} 형식 오류")
-    votes = votes if isinstance(votes, int) and not isinstance(votes, bool) and votes >= 0 else None
-    frames = frames if isinstance(frames, int) and not isinstance(frames, bool) and frames >= 0 else None
+    if isinstance(votes, int) and not isinstance(votes, bool) and isinstance(frames, int) and not isinstance(frames, bool) and votes > frames:
+        reasons.append('votes는 frames보다 클 수 없습니다.')
+    votes = votes if isinstance(votes, int) and not isinstance(votes, bool) and 0 <= votes <= 10 else None
+    frames = frames if isinstance(frames, int) and not isinstance(frames, bool) and 0 <= frames <= 10 else None
     kind = payload.get("kind") or "confirm"
     if kind not in KINDS:
         reasons.append(f"kind 오류: {kind!r}")
@@ -285,12 +315,17 @@ def check_timeouts(db: Session, cfg: Settings, now: datetime) -> list[tuple[str,
                              status="OPEN", created_at=now)
         db.add(review)
         db.delete(pending)
-        latest = db.scalars(select(ParkingEvent).where(ParkingEvent.slot_id == pending.slot_id)
-                            .order_by(ParkingEvent.recognized_at.desc())).first()
         slot = db.get(ParkingSlot, pending.slot_id)
+        latest = db.scalars(select(ParkingEvent).where(ParkingEvent.slot_id == pending.slot_id,
+                            ParkingEvent.camera_id == slot.camera_id, ParkingEvent.valid.is_(True))
+                            .order_by(ParkingEvent.recognized_at.desc(), ParkingEvent.received_at.desc())).first()
+        if latest is None:
+            # Corrupt/imported pending data cannot produce an event-less crop request.
+            continue
+        review.read_plates = [{**r, 'crop_request_event_id': latest.event_id} for r in review.read_plates]
         requests.append((slot.camera_id, {"request_id": request_id_for(review.review_id),
                                           "slot_id": pending.slot_id,
-                                          "event_id": latest.event_id if latest else None,
+                                          "event_id": latest.event_id,
                                           "reason": "unmatched"}))
     db.commit()
     return requests
@@ -312,6 +347,18 @@ def handle_crop(db: Session, cfg: Settings, camera_id: str, payload) -> bool:
     if slot is None or slot.camera_id != camera_id:
         log.warning("다른 카메라의 crop 응답 무시: %s from %s", rid, camera_id)
         return False
+    requested = {r.get('crop_request_event_id') for r in review.read_plates if r.get('crop_request_event_id')}
+    if not requested:
+        # Existing queues created before request IDs were snapshotted.
+        reads = [r for r in review.read_plates if r.get('event_id') and parse_time(r.get('recognized_at'))]
+        requested = {max(reads, key=lambda r: parse_time(r['recognized_at']))['event_id']} if reads else set()
+    if payload.get('slot_id') != review.slot_id or not isinstance(payload.get('event_id'), str) or payload.get('event_id') not in requested or parse_time(payload.get('captured_at')) is None:
+        return False
+    latest = db.scalars(select(ParkingEvent).where(ParkingEvent.slot_id == review.slot_id,
+                        ParkingEvent.camera_id == camera_id, ParkingEvent.valid.is_(True))
+                        .order_by(ParkingEvent.recognized_at.desc(), ParkingEvent.received_at.desc())).first()
+    if latest is None or latest.event_id != payload.get('event_id'):
+        return False
     data = payload.get("image_jpeg_base64")
     if not isinstance(data, str) or len(data) > CROP_MAX_BYTES * 4 // 3 + 8:
         return False
@@ -321,6 +368,13 @@ def handle_crop(db: Session, cfg: Settings, camera_id: str, payload) -> bool:
         return False
     if not image.startswith(b"\xff\xd8") or len(image) > CROP_MAX_BYTES:
         log.warning("JPEG가 아니거나 너무 큰 crop 무시: %s (%d bytes)", rid, len(image))
+        return False
+    try:
+        with Image.open(io.BytesIO(image)) as decoded:
+            if decoded.format != 'JPEG' or max(decoded.size) > CROP_MAX_SIDE:
+                return False
+            decoded.load()
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
         return False
     folder = Path(cfg.crop_dir)
     folder.mkdir(parents=True, exist_ok=True)
@@ -444,8 +498,7 @@ def last_location(db: Session, cfg: Settings, plate: str) -> dict:
 def _event_superseded(db: Session, event: ParkingEvent) -> bool:
     """출차했거나, 그 칸에 나중에 다른 차가 보였으면 이벤트 기준 위치는 쓰지 않는다."""
     exited = db.scalars(select(EntrySession).where(EntrySession.plate_norm == event.plate_norm,
-                                                   EntrySession.state == "EXITED",
-                                                   EntrySession.exited_at >= event.recognized_at)).first()
+                                                   EntrySession.state == "EXITED")).first()
     if exited is not None:
         return True
     later_other = db.scalars(select(ParkingEvent).where(ParkingEvent.slot_id == event.slot_id,

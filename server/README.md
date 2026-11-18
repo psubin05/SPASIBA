@@ -31,15 +31,18 @@ Pi가 MQTT로 보낸 "이 칸에 이 번호" 이벤트를 받아 **입차 기록
 | `GET /entries?state=ACTIVE` | 세션 목록 + 현재 칸 |
 | `GET /vehicles/{plate}/last-location` | `CONFIRMED`(칸·층·구역·`node_id`, `source` session/event) / `PENDING`(알면 구역) / 404 |
 
-**확인한 것**
+**수꽝 원본의 확인 기록 (통합 전)**
 - 테스트: 166 passed (SQLite), DB 스키마 39 passed (PostgreSQL), 실제 브로커 테스트 통과.
 - Docker 실제 실행: 가짜 Pi → Mosquitto → 서버 → PostgreSQL → 조회 API로 `12가3456` → `CONFIRMED B2-A-03` 확인 (시나리오 01).
 - 수빈의 지도 SQL(`db/map_seed.sql`)을 그대로 넣어도 우리 표와 충돌 없음.
 
+통합 후 현재 작업 환경에서는 실제 PostgreSQL·브로커가 없어 해당 검증을 재실행하지 못했다.
+최신 문서 대조와 테스트 기록은 [v0.4 재점검](../docs/interface_audit_v0.4.md)을 따른다.
+
 **아직 안 한 것**
-- 관리자 확인 API·페이지(작업 9): 처리 함수만 있고 경로는 501.
-- Docker에서 시나리오 02~09 실행(브로커 없는 통합 테스트로만 확인), 실제 Pi 연결, 수빈 앱과 합치기, Azure 배포.
-- 카메라 ID: 샘플 지도·가짜 Pi는 아직 `CAM-B2-01`. 수빈 지도가 v0.4 형식(`CAM-B2-01`)으로 바뀌면 시나리오도 바꿈.
+- 별도 관리자 웹 페이지는 담당 미합의 상태다. 관리자 API는 Bearer 인증과 함께 구현했다.
+- Docker에서 시나리오 02~09 실행(브로커 없는 통합 테스트로만 확인), 실제 Pi 연결, Azure 배포.
+- 수빈 지도·경로와 통합했고 샘플 지도·가짜 Pi의 카메라 ID를 v0.4로 통일했다.
 - 팀 상의 안건: `docs/team_agenda_pi_server.md` (발행 조건·빈 칸, crop 응답, 칸 목록 불일치, 지도 데이터 영향).
 
 ## 폴더
@@ -58,7 +61,9 @@ server/
 │   ├── mqtt_listener.py   # MQTT 수신 (event·status·crop), 5초마다 보류 점검 → crop_request
 │   └── routers/
 │       ├── parking.py     # POST /entries, POST /exits, GET /entries, GET /vehicles/{plate}/last-location
-│       └── stubs.py       # 아직 안 만든 API 자리 (501): 관리자 확인(작업 9), 떵개 지도 API
+│       ├── admin.py       # Bearer 인증, 검토 목록·사진·확정/기각·자동 보정 목록
+│       ├── maps.py        # 수빈 QR·지도·최단 경로, 동일 DB 사용
+│       └── simulator.py   # 로컬 시연 입력 (명시적으로 켰을 때만)
 ├── db/                    # 수빈의 지도 SQL 사본: map_schema.sql(표), map_seed.sql(샘플 지도 데이터)
 ├── tools/                 # 가짜 Pi (fake_pi.py, scenarios/)
 ├── tests/                 # pytest
@@ -105,7 +110,7 @@ python -m pytest -q
 | 6 MQTT 수신기 | ✅ 토픽 v0.4 `spasiba/+/event·status·crop`, 클라이언트 이름 `spasiba-cloud` |
 | 7 매칭 엔진 v1 | ✅ EXACT / EDIT1(votes ≥ `MATCH_MIN_VOTES`) / 보류 → `MATCH_PENDING_SECONDS` 뒤 관리자 확인 + crop_request |
 | 8 차량 조회 | ✅ CONFIRMED(session·event) / PENDING(보이는 구역 포함) / 404 |
-| 9 관리자 확인 API·페이지 | ⏸ 나중에. 처리 함수(`app/parking.py`의 `list_reviews`, `resolve_review` 등)는 준비됨, 경로는 501 |
+| 9 관리자 확인 API·페이지 | ✅ API 및 Bearer 인증 구현 / 별도 웹 페이지 담당은 미합의 |
 | 10 통합 테스트 | ✅ 로컬(브로커 없이, `tests/test_integration.py`). 실제 브로커·Docker 실행은 아래 순서로 직접 확인 |
 
 매칭·조회의 세부 규칙 (인터페이스 문서에 없는 부분, 구현하며 정함):

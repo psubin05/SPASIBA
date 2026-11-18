@@ -15,7 +15,7 @@ from app.models import MatchPending, ParkingEvent, ReviewQueue, SlotAssignment
 KST = timezone(timedelta(hours=9))
 T0 = datetime(2026, 11, 18, 14, 0, 0, tzinfo=KST)
 CAM = "CAM-B2-01"
-JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 60 + b"\xff\xd9"
+from tools.fake_pi_messages import DUMMY_JPEG as JPEG
 
 
 @pytest.fixture
@@ -223,7 +223,7 @@ def test_crop_saved_for_open_review(db, cfg):
 def test_bad_crop_ignored(db, cfg, change):
     P.handle_event(db, cfg, CAM, ev("12가3458", votes=2), now=T0)
     (_, req), = P.check_timeouts(db, cfg, now=T0 + timedelta(seconds=121))
-    crop = {**req, "image_jpeg_base64": base64.b64encode(JPEG).decode(), **change}
+    crop = {**req, "captured_at": T0.isoformat(), "image_jpeg_base64": base64.b64encode(JPEG).decode(), **change}
     assert P.handle_crop(db, cfg, CAM, crop) is False
     assert db.query(ReviewQueue).one().crop_path is None
 
@@ -231,7 +231,7 @@ def test_bad_crop_ignored(db, cfg, change):
 def test_crop_from_other_camera_ignored(db, cfg):
     P.handle_event(db, cfg, CAM, ev("12가3458", votes=2), now=T0)
     (_, req), = P.check_timeouts(db, cfg, now=T0 + timedelta(seconds=121))
-    crop = {**req, "image_jpeg_base64": base64.b64encode(JPEG).decode()}
+    crop = {**req, "captured_at": T0.isoformat(), "image_jpeg_base64": base64.b64encode(JPEG).decode()}
     assert P.handle_crop(db, cfg, "CAM-B2-02", crop) is False
 
 
@@ -239,7 +239,7 @@ def test_crop_from_other_camera_ignored(db, cfg):
 def _review(db, cfg, plate="12가3458"):
     P.handle_event(db, cfg, CAM, ev(plate, votes=2), now=T0)
     (_, req), = P.check_timeouts(db, cfg, now=T0 + timedelta(seconds=121))
-    P.handle_crop(db, cfg, CAM, {**req, "image_jpeg_base64": base64.b64encode(JPEG).decode()})
+    P.handle_crop(db, cfg, CAM, {**req, "captured_at": T0.isoformat(), "image_jpeg_base64": base64.b64encode(JPEG).decode()})
     return db.query(ReviewQueue).one()
 
 

@@ -47,6 +47,9 @@ Node 테스트는 실제 브라우저 화면·모바일·QR 스캔 검증을 대
 - [지도 형식](map/schema.md)
 - [수빈 개발 당시 검증 이력](docs/validation.md)
 
-관리자 API는 기존 서버의 미구현(501) 상태를 유지한다. 실제 장비·브로커·PostgreSQL·
-모바일 연결 검증은 별도로 남아 있다. 과거 `legacy_app`/`demo_parking`은 회귀 테스트용이며
+관리자 검토·사진 조회·확정 API는 ADMIN_TOKEN Bearer 인증을 사용한다.
+한 글자 보정 목록은 `/admin/auto-assignments`에서 “자동 확정 · 검토 권장” 정보와 함께 제공한다.
+실제 장비·브로커·PostgreSQL·모바일 연결 검증은 별도로 남아 있다. 과거 `legacy_app`/`demo_parking`은 회귀 테스트용이며
 위 통합 실행에서는 사용하지 않는다. 우드락 제작은 현재 보류 상태다.
+
+첨부된 v0.4 문서 대조와 수정 내역은 [v0.4 재점검](docs/interface_audit_v0.4.md)을 참고한다.

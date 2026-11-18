@@ -100,6 +100,16 @@ def test_crop_request_needs_matching_event_id():
     assert rec.of("crop") == []
 
 
+def test_crop_cache_expires_after_ten_minutes():
+    rec = Recorder()
+    fp = FakePi(_scenario('01_exact'), publish=rec)
+    _start(fp)
+    latest = rec.of('event')[0]['event_id']
+    fp._last_event_at_by_slot['B2-A-03'] -= 601
+    raw = json.dumps({'request_id':'r1','slot_id':'B2-A-03','event_id':latest}).encode()
+    assert fp.handle_crop_request('CAM-B2-01',raw) is None
+
+
 def test_connect_timeout():
     fp = FakePi(_scenario("01_exact"), port=1, connect_timeout=0.5)
     started = time.monotonic()
