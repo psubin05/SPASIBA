@@ -1,0 +1,40 @@
+# 로컬 개발·시연용: MQTT 브로커 + PostgreSQL + API 서버
+# 실행: cp .env.example .env && docker compose up --build
+services:
+  broker:
+    image: eclipse-mosquitto:2.0.20
+    ports:
+      - "1883:1883"        # 개발용 평문. 클라우드 배포 시 8883(TLS)만 연다 (명세서 6.2)
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+
+  db:
+    image: postgres:16.6
+    environment:
+      POSTGRES_USER: spasiba
+      POSTGRES_PASSWORD: spasiba
+      POSTGRES_DB: spasiba
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spasiba"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      broker:
+        condition: service_started
+
+volumes:
+  mosquitto-data:
+  pg-data:

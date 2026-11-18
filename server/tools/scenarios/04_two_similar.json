@@ -1,0 +1,39 @@
+{
+  "name": "04_two_similar",
+  "description": "한 글자 차이 후보가 2대(12가3456, 12가3457) → votes 9여도 보류되는지",
+  "cameras": [
+    {
+      "camera_id": "CAM-B2-A-01"
+    }
+  ],
+  "entries": [
+    {
+      "plate_number": "12가3456"
+    },
+    {
+      "plate_number": "12가3457"
+    }
+  ],
+  "steps": [
+    {
+      "type": "event",
+      "camera_id": "CAM-B2-A-01",
+      "slot_id": "B2-A-03",
+      "plate_number": "12가3458",
+      "votes": 9,
+      "frames": 10
+    }
+  ],
+  "expect": [
+    {
+      "plate_number": "12가3456",
+      "status": "PENDING",
+      "note": "후보 2대"
+    },
+    {
+      "plate_number": "12가3457",
+      "status": "PENDING",
+      "note": "후보 2대"
+    }
+  ]
+}
