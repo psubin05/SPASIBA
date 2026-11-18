@@ -39,7 +39,7 @@ Pi가 MQTT로 보낸 "이 칸에 이 번호" 이벤트를 받아 **입차 기록
 **아직 안 한 것**
 - 관리자 확인 API·페이지(작업 9): 처리 함수만 있고 경로는 501.
 - Docker에서 시나리오 02~09 실행(브로커 없는 통합 테스트로만 확인), 실제 Pi 연결, 수빈 앱과 합치기, Azure 배포.
-- 카메라 ID: 샘플 지도·가짜 Pi는 아직 `CAM-B2-A-01`. 수빈 지도가 v0.4 형식(`CAM-B2-01`)으로 바뀌면 시나리오도 바꿈.
+- 카메라 ID: 샘플 지도·가짜 Pi는 아직 `CAM-B2-01`. 수빈 지도가 v0.4 형식(`CAM-B2-01`)으로 바뀌면 시나리오도 바꿈.
 - 팀 상의 안건: `docs/team_agenda_pi_server.md` (발행 조건·빈 칸, crop 응답, 칸 목록 불일치, 지도 데이터 영향).
 
 ## 폴더
@@ -134,7 +134,7 @@ docker compose up -d --build                           # 코드가 바뀌었으�
 docker compose exec -T db psql -U spasiba -d spasiba -v ON_ERROR_STOP=1 < db/map_seed.sql   # 수빈 샘플 지도
 .venv/bin/python -m tools.fake_pi tools/scenarios/01_exact.json --entries-url http://localhost:8000/entries
 curl "http://localhost:8000/vehicles/12%EA%B0%803456/last-location"   # 12가3456 → CONFIRMED B2-A-03
-docker compose logs api | tail -20                     # "이벤트 CAM-B2-A-01 … → assigned"
+docker compose logs api | tail -20                     # "이벤트 CAM-B2-01 … → assigned"
 ```
 
 시나리오마다 DB를 비우고(위 2~4줄) 다시 돌립니다. `09_crop_request`는 약 2분 걸리고, 서버 점검이 5초 간격이라 `--linger 10`을 붙입니다.

@@ -32,7 +32,7 @@ def test_run_publishes_events_in_order():
     assert events[0]["plate_number"] == "12가3456"
     assert events[0]["slot_id"] == "B2-A-03"
     # 처음에 online(retained), 끝에 정상 종료 offline
-    assert rec.calls[0][0] == "spasiba/CAM-B2-A-01/status"
+    assert rec.calls[0][0] == "spasiba/CAM-B2-01/status"
     assert rec.calls[0][1]["state"] == "online" and rec.calls[0][2] is True
     assert rec.of("status")[-1]["state"] == "offline"
     assert [m["topic"] for m in log] == [t for t, _, _ in rec.calls]
@@ -63,16 +63,16 @@ def _start(fp):
 
 def test_crop_request_bad_json_ignored():
     fp = FakePi(_scenario("01_exact"), publish=Recorder())
-    assert fp.handle_crop_request("CAM-B2-A-01", b"{not json") is None
-    assert fp.handle_crop_request("CAM-B2-A-01", b"[1, 2]") is None
-    assert fp.handle_crop_request("CAM-B2-A-01", json.dumps({"slot_id": "B2-A-03"}).encode()) is None
+    assert fp.handle_crop_request("CAM-B2-01", b"{not json") is None
+    assert fp.handle_crop_request("CAM-B2-01", b"[1, 2]") is None
+    assert fp.handle_crop_request("CAM-B2-01", json.dumps({"slot_id": "B2-A-03"}).encode()) is None
 
 
 def test_crop_request_unknown_slot_ignored():
     rec = Recorder()
     fp = FakePi(_scenario("01_exact"), publish=rec)
     raw = json.dumps({"request_id": "r1", "slot_id": "B9-Z-01", "event_id": "x"}).encode()
-    assert fp.handle_crop_request("CAM-B2-A-01", raw) is None
+    assert fp.handle_crop_request("CAM-B2-01", raw) is None
     assert fp.handle_crop_request("CAM-UNKNOWN", raw) is None
     assert rec.of("crop") == []
 
@@ -84,7 +84,7 @@ def test_crop_request_answered_for_latest_event():
     latest = rec.of("event")[0]["event_id"]
     raw = json.dumps({"request_id": "r1", "slot_id": "B2-A-03", "event_id": latest,
                       "reason": "unmatched"}).encode()
-    crop = fp.handle_crop_request("CAM-B2-A-01", raw)
+    crop = fp.handle_crop_request("CAM-B2-01", raw)
     assert crop["request_id"] == "r1" and crop["event_id"] == latest
     assert len(rec.of("crop")) == 1
 
@@ -96,7 +96,7 @@ def test_crop_request_needs_matching_event_id():
     _start(fp)
     for body in ({"request_id": "r2", "slot_id": "B2-A-03"},
                  {"request_id": "r3", "slot_id": "B2-A-03", "event_id": "old"}):
-        assert fp.handle_crop_request("CAM-B2-A-01", json.dumps(body).encode()) is None
+        assert fp.handle_crop_request("CAM-B2-01", json.dumps(body).encode()) is None
     assert rec.of("crop") == []
 
 
@@ -143,7 +143,7 @@ def test_against_real_broker():
         sub.loop_stop()
         sub.disconnect()
     topics = [t for t, _ in got]
-    assert topics.count("spasiba/CAM-B2-A-01/event") == 1
+    assert topics.count("spasiba/CAM-B2-01/event") == 1
     assert any(t.endswith("/status") and p.get("state") == "online" for t, p in got)
 
 
@@ -179,14 +179,14 @@ class FakeClient:
 def _with_fake_client(name="01_exact"):
     fp = FakePi(_scenario(name))
     client = FakeClient()
-    fp._clients["CAM-B2-A-01"] = client
-    fp._connected.add("CAM-B2-A-01")
+    fp._clients["CAM-B2-01"] = client
+    fp._connected.add("CAM-B2-01")
     return fp, client
 
 
 def test_graceful_close_publishes_offline_with_ts_then_disconnects():
     fp, client = _with_fake_client()
-    fp._close("CAM-B2-A-01", abrupt=False)
+    fp._close("CAM-B2-01", abrupt=False)
     topic_, payload, retain = client.published[-1]
     assert topic_.endswith("/status") and payload["state"] == "offline" and "ts" in payload
     assert retain is True
@@ -196,30 +196,30 @@ def test_graceful_close_publishes_offline_with_ts_then_disconnects():
 
 def test_abrupt_close_waits_for_queued_publishes():
     fp, client = _with_fake_client()
-    fp._run_step({"type": "event", "camera_id": "CAM-B2-A-01", "slot_id": "B2-A-03",
+    fp._run_step({"type": "event", "camera_id": "CAM-B2-01", "slot_id": "B2-A-03",
                   "plate_number": "12가3456"})
-    fp._close("CAM-B2-A-01", abrupt=True)
+    fp._close("CAM-B2-01", abrupt=True)
     assert client.infos and all(i.waited for i in client.infos)
     assert "disconnect" not in client.calls
 
 
 def test_publish_after_client_gone_does_not_raise():
     fp, client = _with_fake_client()
-    fp._close("CAM-B2-A-01", abrupt=True)
+    fp._close("CAM-B2-01", abrupt=True)
     raw = json.dumps({"request_id": "r1", "slot_id": "B2-A-03", "event_id": "x"}).encode()
-    assert fp._on_crop_message("CAM-B2-A-01", raw) is None
+    assert fp._on_crop_message("CAM-B2-01", raw) is None
 
 
 def test_crop_message_callback_swallows_errors(monkeypatch):
     fp, _ = _with_fake_client()
     monkeypatch.setattr(fp, "handle_crop_request", lambda *a: 1 / 0)
-    assert fp._on_crop_message("CAM-B2-A-01", b"{}") is None
+    assert fp._on_crop_message("CAM-B2-01", b"{}") is None
 
 
 def test_status_step_after_disconnect_skipped():
     fp, client = _with_fake_client()
-    fp._close("CAM-B2-A-01", abrupt=True)
-    fp._run_step({"type": "status", "camera_id": "CAM-B2-A-01", "state": "online"})
+    fp._close("CAM-B2-01", abrupt=True)
+    fp._run_step({"type": "status", "camera_id": "CAM-B2-01", "state": "online"})
 
 
 def test_real_broker_lwt_and_graceful_offline():

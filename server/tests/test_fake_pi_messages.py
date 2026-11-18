@@ -28,11 +28,11 @@ def test_regions_count():
 
 
 def test_topic():
-    assert topic("CAM-B2-A-01", "event") == "spasiba/CAM-B2-A-01/event"  # v0.4: 구역 없음
+    assert topic("CAM-B2-01", "event") == "spasiba/CAM-B2-01/event"  # v0.4: 구역 없음
 
 
 def test_build_event_required_and_optional():
-    e = build_event(camera_id="CAM-B2-A-01", slot_id="B2-A-03",
+    e = build_event(camera_id="CAM-B2-01", slot_id="B2-A-03",
                     plate_number="12가3456")
     for key in ("event_id", "plate_number", "camera_id", "slot_id", "recognized_at"):
         assert key in e
@@ -41,14 +41,14 @@ def test_build_event_required_and_optional():
     assert "votes" not in e and "frames" not in e and "kind" not in e
     assert uuid.UUID(e["event_id"]).version == 4
 
-    e2 = build_event(camera_id="CAM-B2-A-01", slot_id="B2-A-03",
+    e2 = build_event(camera_id="CAM-B2-01", slot_id="B2-A-03",
                      plate_number="12가3456", votes=9, frames=10, kind="confirm")
     assert (e2["votes"], e2["frames"], e2["kind"]) == (9, 10, "confirm")
 
 
 def test_build_event_keeps_given_event_id():
     eid = str(uuid.uuid4())
-    e = build_event(camera_id="CAM-B2-A-01", slot_id="B2-A-03",
+    e = build_event(camera_id="CAM-B2-01", slot_id="B2-A-03",
                     plate_number="12가3456", event_id=eid)
     assert e["event_id"] == eid
 

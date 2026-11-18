@@ -1,0 +1,9 @@
+__pycache__/
+.venv/
+.env
+*.pyc
+.local/
+*.db
+*.sqlite3
+.pytest_cache/
+crops/

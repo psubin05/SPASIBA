@@ -25,7 +25,9 @@ services:
       retries: 10
 
   api:
-    build: .
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
     env_file: .env
     ports:
       - "8000:8000"

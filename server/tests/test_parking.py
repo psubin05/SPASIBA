@@ -14,7 +14,7 @@ from app.models import MatchPending, ParkingEvent, ReviewQueue, SlotAssignment
 
 KST = timezone(timedelta(hours=9))
 T0 = datetime(2026, 11, 18, 14, 0, 0, tzinfo=KST)
-CAM = "CAM-B2-A-01"
+CAM = "CAM-B2-01"
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 60 + b"\xff\xd9"
 
 
@@ -143,7 +143,7 @@ def test_event_after_exit_is_not_matched(db, cfg):
     ({"slot_id": "B2-B-01"}, "카메라에 등록 안 된 칸"),
     ({"plate_number": "12가345"}, "번호 형식"),
     ({"recognized_at": "2026-11-18T14:00:00"}, "시각"),
-    ({"camera_id": "CAM-B2-B-01"}, "토픽"),
+    ({"camera_id": "CAM-B2-02"}, "토픽"),
     ({"kind": "explode"}, "kind"),
 ])
 def test_invalid_events_saved_not_matched(db, cfg, change, reason):
@@ -232,7 +232,7 @@ def test_crop_from_other_camera_ignored(db, cfg):
     P.handle_event(db, cfg, CAM, ev("12가3458", votes=2), now=T0)
     (_, req), = P.check_timeouts(db, cfg, now=T0 + timedelta(seconds=121))
     crop = {**req, "image_jpeg_base64": base64.b64encode(JPEG).decode()}
-    assert P.handle_crop(db, cfg, "CAM-B2-B-01", crop) is False
+    assert P.handle_crop(db, cfg, "CAM-B2-02", crop) is False
 
 
 # ---- 관리자 확인 ----

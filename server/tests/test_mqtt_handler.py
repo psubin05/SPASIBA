@@ -9,7 +9,7 @@ from app.mqtt_listener import SUBSCRIPTIONS, MessageHandler
 
 KST = timezone(timedelta(hours=9))
 T0 = datetime(2026, 11, 18, 14, 0, 0, tzinfo=KST)
-CAM = "CAM-B2-A-01"
+CAM = "CAM-B2-01"
 
 
 def _handler(app_client):
@@ -41,7 +41,7 @@ def test_bad_messages_do_not_raise(app_client):
     h, _ = _handler(app_client)
     assert h.handle(f"spasiba/{CAM}/event", b"{not json", now=T0) == "rejected"
     assert h.handle(f"spasiba/{CAM}/event", "한글".encode("euc-kr"), now=T0) == "rejected"
-    assert h.handle("spasiba/B2-A/CAM-B2-A-01/event", _event(), now=T0) == "ignored"  # v0.3 토픽
+    assert h.handle("spasiba/B2-A/CAM-B2-01/event", _event(), now=T0) == "ignored"  # v0.3 토픽
     assert h.handle(f"spasiba/{CAM}/unknown", b"{}", now=T0) == "ignored"
     with app_client.app.state.db.SessionLocal() as db:
         assert db.query(ParkingEvent).count() == 0

@@ -10,13 +10,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import Settings
 from .db import Database
 from .mqtt_listener import MqttListener
 from .parking import ParkingError
-from .routers import parking, stubs
+from .routers import parking, stubs, maps, simulator
+from .map_service import seed_sample, ROOT
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -29,14 +31,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         database.create_all()
+        if settings.seed_sample_map:
+            seed_sample(database)
         mqtt.start()
-        yield
-        mqtt.stop()
+        try:
+            yield
+        finally:
+            mqtt.stop()
+            database.engine.dispose()
 
     app = FastAPI(title="SPASIBA Cloud API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.db = database
     app.state.mqtt = mqtt
+    app.mount('/simulator/assets', StaticFiles(directory=ROOT / 'simulator'), name='simulator-assets')
+
+    @app.middleware('http')
+    async def no_stale_response(request, call_next):
+        response = await call_next(request)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
 
     @app.get("/health", tags=["공동"])
     def health():
@@ -65,7 +79,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(parking.router)
     app.include_router(stubs.admin)
-    app.include_router(stubs.dg)
+    app.include_router(maps.router)
+    app.include_router(simulator.router)
     return app
 
 

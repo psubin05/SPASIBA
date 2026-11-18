@@ -3,7 +3,7 @@
   "description": "애매한 인식(votes 2)이 120초 보류된 뒤 서버의 crop_request에 가짜 Pi가 더미 crop으로 응답하는지 (약 2분 걸림)",
   "cameras": [
     {
-      "camera_id": "CAM-B2-A-01"
+      "camera_id": "CAM-B2-01"
     }
   ],
   "entries": [
@@ -14,7 +14,7 @@
   "steps": [
     {
       "type": "event",
-      "camera_id": "CAM-B2-A-01",
+      "camera_id": "CAM-B2-01",
       "slot_id": "B2-A-01",
       "plate_number": "78라9234",
       "votes": 2,

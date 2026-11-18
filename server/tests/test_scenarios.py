@@ -6,9 +6,9 @@ from tools.scenario import ScenarioError, all_scenarios, load_scenario, validate
 
 BASE = {
     "name": "t",
-    "cameras": [{"camera_id": "CAM-B2-A-01"}],
+    "cameras": [{"camera_id": "CAM-B2-01"}],
     "steps": [
-        {"type": "event", "camera_id": "CAM-B2-A-01", "slot_id": "B2-A-03",
+        {"type": "event", "camera_id": "CAM-B2-01", "slot_id": "B2-A-03",
          "plate_number": "12가3456", "event_ref": "e1"},
     ],
 }
@@ -49,25 +49,25 @@ def test_unknown_camera_rejected():
 
 def test_bad_plate_rejected():
     with pytest.raises(ScenarioError):
-        validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-A-01",
+        validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-01",
                                       "slot_id": "B2-A-01", "plate_number": "12가345"}))
 
 
 def test_bad_plate_allowed_when_expected_invalid():
-    validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-A-01",
+    validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-01",
                                   "slot_id": "B2-A-01", "plate_number": "12가345",
                                   "expect_invalid": True}))
 
 
 def test_bad_slot_format_rejected():
     with pytest.raises(ScenarioError):
-        validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-A-01",
+        validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-01",
                                       "slot_id": "B2A1", "plate_number": "12가3456"}))
 
 
 def test_slot_of_other_zone_allowed():
     """v0.4: 카메라 한 대가 여러 구역의 칸을 볼 수 있다."""
-    validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-A-01",
+    validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-01",
                                   "slot_id": "B2-B-01", "plate_number": "12가3456"}))
 
 
@@ -85,7 +85,7 @@ def test_missing_required_key_rejected():
 
 def test_duplicate_event_ref_rejected():
     with pytest.raises(ScenarioError):
-        validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-A-01",
+        validate_scenario(_with_step({"type": "event", "camera_id": "CAM-B2-01",
                                       "slot_id": "B2-A-01", "plate_number": "12가3456",
                                       "event_ref": "e1"}))
 
@@ -98,8 +98,8 @@ def test_bad_json_file_rejected(tmp_path):
 
 
 def test_step_after_disconnect_rejected():
-    sc = _with_step({"type": "disconnect", "camera_id": "CAM-B2-A-01", "abrupt": True})
-    sc["steps"].append({"type": "event", "camera_id": "CAM-B2-A-01", "slot_id": "B2-A-01",
+    sc = _with_step({"type": "disconnect", "camera_id": "CAM-B2-01", "abrupt": True})
+    sc["steps"].append({"type": "event", "camera_id": "CAM-B2-01", "slot_id": "B2-A-01",
                         "plate_number": "12가3456"})
     with pytest.raises(ScenarioError):
         validate_scenario(sc)

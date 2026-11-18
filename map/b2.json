@@ -1,0 +1,467 @@
+{
+  "floor": "B2",
+  "sample": true,
+  "nodes": [
+    {
+      "node_id": "ENT1",
+      "floor": "B2",
+      "x": 0,
+      "y": 3,
+      "type": "entrance"
+    },
+    {
+      "node_id": "J1",
+      "floor": "B2",
+      "x": 3,
+      "y": 3,
+      "type": "junction"
+    },
+    {
+      "node_id": "J2",
+      "floor": "B2",
+      "x": 7,
+      "y": 3,
+      "type": "junction"
+    },
+    {
+      "node_id": "J3",
+      "floor": "B2",
+      "x": 11,
+      "y": 3,
+      "type": "junction"
+    },
+    {
+      "node_id": "J4",
+      "floor": "B2",
+      "x": 15,
+      "y": 3,
+      "type": "junction"
+    },
+    {
+      "node_id": "J5",
+      "floor": "B2",
+      "x": 19,
+      "y": 3,
+      "type": "junction"
+    },
+    {
+      "node_id": "N-A01",
+      "floor": "B2",
+      "x": 7,
+      "y": 2,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-A02",
+      "floor": "B2",
+      "x": 11,
+      "y": 2,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-A03",
+      "floor": "B2",
+      "x": 15,
+      "y": 2,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-A04",
+      "floor": "B2",
+      "x": 19,
+      "y": 2,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-B01",
+      "floor": "B2",
+      "x": 7,
+      "y": 4,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-B02",
+      "floor": "B2",
+      "x": 11,
+      "y": 4,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-B03",
+      "floor": "B2",
+      "x": 15,
+      "y": 4,
+      "type": "slot_front"
+    },
+    {
+      "node_id": "N-B04",
+      "floor": "B2",
+      "x": 19,
+      "y": 4,
+      "type": "slot_front"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "ENT1",
+      "to_node": "J1",
+      "length_m": 3
+    },
+    {
+      "from_node": "J1",
+      "to_node": "J2",
+      "length_m": 4
+    },
+    {
+      "from_node": "J2",
+      "to_node": "J3",
+      "length_m": 4
+    },
+    {
+      "from_node": "J3",
+      "to_node": "J4",
+      "length_m": 4
+    },
+    {
+      "from_node": "J4",
+      "to_node": "J5",
+      "length_m": 4
+    },
+    {
+      "from_node": "J2",
+      "to_node": "N-A01",
+      "length_m": 1
+    },
+    {
+      "from_node": "J3",
+      "to_node": "N-A02",
+      "length_m": 1
+    },
+    {
+      "from_node": "J4",
+      "to_node": "N-A03",
+      "length_m": 1
+    },
+    {
+      "from_node": "J5",
+      "to_node": "N-A04",
+      "length_m": 1
+    },
+    {
+      "from_node": "J2",
+      "to_node": "N-B01",
+      "length_m": 1
+    },
+    {
+      "from_node": "J3",
+      "to_node": "N-B02",
+      "length_m": 1
+    },
+    {
+      "from_node": "J4",
+      "to_node": "N-B03",
+      "length_m": 1
+    },
+    {
+      "from_node": "J5",
+      "to_node": "N-B04",
+      "length_m": 1
+    }
+  ],
+  "slots": [
+    {
+      "slot_id": "B2-A-01",
+      "zone_id": "B2-A",
+      "camera_id": "CAM-B2-01",
+      "name": "A-01",
+      "node_id": "N-A01",
+      "roi": null,
+      "polygon": [
+        [
+          5.75,
+          -0.6
+        ],
+        [
+          8.25,
+          -0.6
+        ],
+        [
+          8.25,
+          1.4
+        ],
+        [
+          5.75,
+          1.4
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-A-02",
+      "zone_id": "B2-A",
+      "camera_id": "CAM-B2-01",
+      "name": "A-02",
+      "node_id": "N-A02",
+      "roi": null,
+      "polygon": [
+        [
+          9.75,
+          -0.6
+        ],
+        [
+          12.25,
+          -0.6
+        ],
+        [
+          12.25,
+          1.4
+        ],
+        [
+          9.75,
+          1.4
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-A-03",
+      "zone_id": "B2-A",
+      "camera_id": "CAM-B2-01",
+      "name": "A-03",
+      "node_id": "N-A03",
+      "roi": null,
+      "polygon": [
+        [
+          13.75,
+          -0.6
+        ],
+        [
+          16.25,
+          -0.6
+        ],
+        [
+          16.25,
+          1.4
+        ],
+        [
+          13.75,
+          1.4
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-A-04",
+      "zone_id": "B2-A",
+      "camera_id": "CAM-B2-01",
+      "name": "A-04",
+      "node_id": "N-A04",
+      "roi": null,
+      "polygon": [
+        [
+          17.75,
+          -0.6
+        ],
+        [
+          20.25,
+          -0.6
+        ],
+        [
+          20.25,
+          1.4
+        ],
+        [
+          17.75,
+          1.4
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-B-01",
+      "zone_id": "B2-B",
+      "camera_id": "CAM-B2-02",
+      "name": "B-01",
+      "node_id": "N-B01",
+      "roi": null,
+      "polygon": [
+        [
+          5.75,
+          4.6
+        ],
+        [
+          8.25,
+          4.6
+        ],
+        [
+          8.25,
+          6.6
+        ],
+        [
+          5.75,
+          6.6
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-B-02",
+      "zone_id": "B2-B",
+      "camera_id": "CAM-B2-02",
+      "name": "B-02",
+      "node_id": "N-B02",
+      "roi": null,
+      "polygon": [
+        [
+          9.75,
+          4.6
+        ],
+        [
+          12.25,
+          4.6
+        ],
+        [
+          12.25,
+          6.6
+        ],
+        [
+          9.75,
+          6.6
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-B-03",
+      "zone_id": "B2-B",
+      "camera_id": "CAM-B2-02",
+      "name": "B-03",
+      "node_id": "N-B03",
+      "roi": null,
+      "polygon": [
+        [
+          13.75,
+          4.6
+        ],
+        [
+          16.25,
+          4.6
+        ],
+        [
+          16.25,
+          6.6
+        ],
+        [
+          13.75,
+          6.6
+        ]
+      ]
+    },
+    {
+      "slot_id": "B2-B-04",
+      "zone_id": "B2-B",
+      "camera_id": "CAM-B2-02",
+      "name": "B-04",
+      "node_id": "N-B04",
+      "roi": null,
+      "polygon": [
+        [
+          17.75,
+          4.6
+        ],
+        [
+          20.25,
+          4.6
+        ],
+        [
+          20.25,
+          6.6
+        ],
+        [
+          17.75,
+          6.6
+        ]
+      ]
+    }
+  ],
+  "qr_locations": [
+    {
+      "location_id": "QR-B2-ENT1",
+      "node_id": "ENT1",
+      "floor": "B2",
+      "name": "출입구 A"
+    }
+  ],
+  "zones": [
+    {
+      "zone_id": "B2-A",
+      "floor": "B2",
+      "name": "A"
+    },
+    {
+      "zone_id": "B2-B",
+      "floor": "B2",
+      "name": "B"
+    }
+  ],
+  "cameras": [
+    {
+      "camera_id": "CAM-B2-01",
+      "zone_id": "B2-A",
+      "description": "Sample camera"
+    },
+    {
+      "camera_id": "CAM-B2-02",
+      "zone_id": "B2-B",
+      "description": "Sample camera"
+    }
+  ],
+  "demo_layout": {
+    "status": "prototype_unmeasured",
+    "board": {
+      "x": -1,
+      "y": -1,
+      "width": 22,
+      "depth": 8
+    },
+    "aisle": {
+      "x": -0.5,
+      "y": 2,
+      "width": 21,
+      "depth": 2
+    },
+    "walls": [
+      {
+        "x": -1,
+        "y": -1,
+        "width": 22,
+        "depth": 0.12,
+        "height": 0.35
+      },
+      {
+        "x": -1,
+        "y": 6.88,
+        "width": 22,
+        "depth": 0.12,
+        "height": 0.35
+      },
+      {
+        "x": 20.88,
+        "y": -1,
+        "width": 0.12,
+        "depth": 8,
+        "height": 0.35
+      }
+    ],
+    "camera_mounts": [
+      {
+        "camera_id": "CAM-B2-01",
+        "label": "CAM A (임시)",
+        "x": 4,
+        "y": -0.7,
+        "height": 2.5
+      },
+      {
+        "camera_id": "CAM-B2-02",
+        "label": "CAM B (임시)",
+        "x": 4,
+        "y": 6.7,
+        "height": 2.5
+      }
+    ]
+  }
+}

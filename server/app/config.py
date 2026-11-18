@@ -26,9 +26,14 @@ class Settings:
     match_pending_seconds: float = 120  # 매칭 규칙 ④: 보류 → 관리자 확인까지
     crop_dir: str = "crops"             # crop JPEG 저장 폴더 (커밋 금지, .gitignore)
 
+    simulator_enabled: bool = False
+    seed_sample_map: bool = False
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
+            simulator_enabled=_bool(os.getenv("SIMULATOR_ENABLED"), False),
+            seed_sample_map=_bool(os.getenv("SEED_SAMPLE_MAP"), False),
             database_url=os.getenv("DATABASE_URL", "sqlite:///./spasiba_dev.db"),
             mqtt_enabled=_bool(os.getenv("MQTT_ENABLED"), False),
             mqtt_host=os.getenv("MQTT_HOST", "localhost"),

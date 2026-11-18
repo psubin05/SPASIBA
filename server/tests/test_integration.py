@@ -71,7 +71,7 @@ def test_scenario_end_to_end(app_client, monkeypatch, path):
         if name == "07_slot_new_car":
             assert db.query(SlotAssignment).filter(SlotAssignment.ended_at.isnot(None)).count() == 1
         if name == "08_lwt":
-            assert handler.camera_status["CAM-B2-A-01"]["state"] == "online"  # LWT는 브로커가 냄 (실제 브로커 테스트)
+            assert handler.camera_status["CAM-B2-01"]["state"] == "online"  # LWT는 브로커가 냄 (실제 브로커 테스트)
         if name == "09_crop_request":
             review = db.query(ReviewQueue).one()
             assert review.status == "OPEN" and review.crop_path, "crop_request → 가짜 Pi crop → 저장"
