@@ -1,0 +1,17 @@
+user CAM-B2-01
+topic write spasiba/CAM-B2-01/event
+topic write spasiba/CAM-B2-01/status
+topic write spasiba/CAM-B2-01/crop
+topic read spasiba/CAM-B2-01/crop_request
+
+user CAM-B2-02
+topic write spasiba/CAM-B2-02/event
+topic write spasiba/CAM-B2-02/status
+topic write spasiba/CAM-B2-02/crop
+topic read spasiba/CAM-B2-02/crop_request
+
+user cloud-server
+topic read spasiba/+/event
+topic read spasiba/+/status
+topic read spasiba/+/crop
+topic write spasiba/+/crop_request

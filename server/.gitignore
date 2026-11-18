@@ -5,3 +5,4 @@ __pycache__/
 crops/
 .venv/
 .superpowers/
+mosquitto/tls.local/

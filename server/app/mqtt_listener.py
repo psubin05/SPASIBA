@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import ssl
 import threading
 from collections.abc import Callable
 from datetime import datetime
@@ -105,9 +106,11 @@ class MqttListener:
         if self.settings.mqtt_username:
             client.username_pw_set(self.settings.mqtt_username, self.settings.mqtt_password)
         if self.settings.mqtt_tls:
-            client.tls_set()
+            client.tls_set_context(ssl.create_default_context(cafile=self.settings.mqtt_ca))
         client.on_connect = self._on_connect
         client.on_disconnect = self._on_disconnect
+        client.on_subscribe = self._on_subscribe
+        client.on_connect_fail = lambda client, userdata: log.warning("MQTT 연결 실패, 재시도")
         client.on_message = self._on_message
         client.suppress_exceptions = True
         client.reconnect_delay_set(min_delay=1, max_delay=30)
@@ -138,12 +141,19 @@ class MqttListener:
 
     # --- 콜백 ---
     def _on_connect(self, client, userdata, flags, reason_code, properties):
-        self.connected = not reason_code.is_failure
-        if self.connected:
+        if not reason_code.is_failure:
             client.subscribe(SUBSCRIPTIONS)
-            log.info("MQTT 연결, 구독: %s", [t for t, _ in SUBSCRIPTIONS])
         else:
             log.warning("MQTT 연결 실패: %s", reason_code)
+
+    def _on_subscribe(self, client, userdata, mid, reason_codes, properties):
+        self.connected = len(reason_codes) == len(SUBSCRIPTIONS) and all(
+            not code.is_failure for code in reason_codes
+        )
+        if self.connected:
+            log.info("MQTT 연결, 구독: %s", [t for t, _ in SUBSCRIPTIONS])
+        else:
+            log.warning("MQTT 구독 실패: %s", reason_codes)
 
     def _on_disconnect(self, client, userdata, flags, reason_code, properties):
         self.connected = False

@@ -3,7 +3,7 @@
   "description": "같은 event_id 재전송(QoS 1 중복) → parking_event가 1건만 저장되는지",
   "cameras": [
     {
-      "camera_id": "CAM-B2-A-01"
+      "camera_id": "CAM-B2-01"
     }
   ],
   "entries": [
@@ -14,7 +14,7 @@
   "steps": [
     {
       "type": "event",
-      "camera_id": "CAM-B2-A-01",
+      "camera_id": "CAM-B2-01",
       "slot_id": "B2-A-03",
       "plate_number": "12가3456",
       "votes": 9,

@@ -31,7 +31,7 @@ class MQTTTransport:
             if config.cert:
                 context.load_cert_chain(config.cert, config.key)
             self.client.tls_set_context(context)
-        self.status_topic = config.status_topic.format(zone_id=config.zone_id, camera_id=config.camera_id)
+        self.status_topic = config.topic('status')
         self.client.will_set(self.status_topic, json.dumps({'state':'offline'}), qos=1, retain=True)
         self.client.reconnect_delay_set(min_delay=1, max_delay=30)
         self.client.on_connect = self._connect
@@ -70,6 +70,9 @@ class MQTTTransport:
             LOG.warning('crop request queue full')
 
     def start(self):
+        pending = self.store.peek()
+        if pending and pending.get('camera_id') != self.config.camera_id:
+            raise ValueError('Outbox camera ID differs from configuration; use a database for this camera')
         self.client.connect_async(self.config.host, self.config.port, keepalive=30)
         self.client.loop_start()
         self.thread.start()

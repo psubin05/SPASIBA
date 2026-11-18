@@ -25,6 +25,8 @@ class Settings:
     match_min_votes: int = 5           # 매칭 규칙 ②: 한 글자 차이 확정에 필요한 votes
     match_pending_seconds: float = 120  # 매칭 규칙 ④: 보류 → 관리자 확인까지
     crop_dir: str = "crops"             # crop JPEG 저장 폴더 (커밋 금지, .gitignore)
+    crop_enabled: bool = False
+    mqtt_ca: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -41,4 +43,6 @@ class Settings:
             match_min_votes=int(os.getenv("MATCH_MIN_VOTES", "5")),
             match_pending_seconds=float(os.getenv("MATCH_PENDING_SECONDS", "120")),
             crop_dir=os.getenv("CROP_DIR", "crops"),
+            crop_enabled=_bool(os.getenv("CROP_ENABLED"), False),
+            mqtt_ca=os.getenv("MQTT_CA") or None,
         )

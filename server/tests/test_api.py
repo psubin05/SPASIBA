@@ -7,7 +7,7 @@ from app import parking as P
 
 KST = timezone(timedelta(hours=9))
 T0 = datetime(2026, 11, 18, 14, 0, 0, tzinfo=KST)
-CAM = "CAM-B2-A-01"
+CAM = "CAM-B2-01"
 
 
 def ev(plate, slot="B2-A-03", votes=9, at=T0):

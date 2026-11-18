@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .config import Settings
+from .identifiers import CAMERA_ID_RE, SLOT_ID_RE
 from .matching import Candidate, decide
 from .models import EntrySession, MatchPending, ParkingEvent, ReviewQueue, SlotAssignment
 from .models_map import ParkingSlot, Zone
@@ -28,7 +29,7 @@ log = logging.getLogger("spasiba.parking")
 
 REQUIRED = ("plate_number", "camera_id", "slot_id", "recognized_at")
 KINDS = ("confirm", "recheck")
-CROP_MAX_BYTES = 200_000  # 인터페이스는 100KB 이하. 여유를 두고 그보다 크면 버림
+CROP_MAX_BYTES = 100_000
 
 
 class ParkingError(Exception):
@@ -171,7 +172,7 @@ def handle_event(db: Session, cfg: Settings, topic_camera_id: str, payload, now:
         return "duplicate"
 
     reasons = []
-    missing = [k for k in REQUIRED if payload.get(k) in (None, "")]
+    missing = [k for k in REQUIRED if not isinstance(payload.get(k), str) or not payload[k]]
     if missing:
         reasons.append("필수 필드 없음: " + ", ".join(missing))
     plate_number = payload.get("plate_number") if isinstance(payload.get("plate_number"), str) else ""
@@ -185,6 +186,10 @@ def handle_event(db: Session, cfg: Settings, topic_camera_id: str, payload, now:
         recognized_at = now
     if camera_id != topic_camera_id:
         reasons.append(f"토픽 camera_id({topic_camera_id})와 본문({camera_id})이 다름")
+    if not CAMERA_ID_RE.fullmatch(camera_id):
+        reasons.append("camera_id 형식 오류")
+    if slot_id and not SLOT_ID_RE.fullmatch(slot_id):
+        reasons.append("slot_id 형식 오류")
     votes, frames = (payload.get(k) for k in ("votes", "frames"))
     for name, value in (("votes", votes), ("frames", frames)):
         if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
@@ -266,6 +271,10 @@ def request_id_for(review_id: uuid.UUID) -> str:
     return f"r-{review_id.hex}"
 
 
+def _review_event_id(reads: list[dict]) -> str:
+    return max(reads, key=lambda read: datetime.fromisoformat(read["recognized_at"]))["event_id"]
+
+
 def check_timeouts(db: Session, cfg: Settings, now: datetime) -> list[tuple[str, dict]]:
     """오래된 보류를 review_queue로 넘기고, 보낼 crop_request 목록 (camera_id, payload)을 돌려준다."""
     deadline = now - timedelta(seconds=cfg.match_pending_seconds)
@@ -285,19 +294,18 @@ def check_timeouts(db: Session, cfg: Settings, now: datetime) -> list[tuple[str,
                              status="OPEN", created_at=now)
         db.add(review)
         db.delete(pending)
-        latest = db.scalars(select(ParkingEvent).where(ParkingEvent.slot_id == pending.slot_id)
-                            .order_by(ParkingEvent.recognized_at.desc())).first()
-        slot = db.get(ParkingSlot, pending.slot_id)
-        requests.append((slot.camera_id, {"request_id": request_id_for(review.review_id),
-                                          "slot_id": pending.slot_id,
-                                          "event_id": latest.event_id if latest else None,
-                                          "reason": "unmatched"}))
+        if cfg.crop_enabled:
+            slot = db.get(ParkingSlot, pending.slot_id)
+            requests.append((slot.camera_id, {"request_id": request_id_for(review.review_id),
+                                              "slot_id": pending.slot_id,
+                                              "event_id": _review_event_id(review.read_plates),
+                                              "reason": "unmatched"}))
     db.commit()
     return requests
 
 
 def handle_crop(db: Session, cfg: Settings, camera_id: str, payload) -> bool:
-    if not isinstance(payload, dict) or not isinstance(payload.get("request_id"), str):
+    if not cfg.crop_enabled or not isinstance(payload, dict) or not isinstance(payload.get("request_id"), str):
         return False
     rid = payload["request_id"]
     try:
@@ -307,6 +315,10 @@ def handle_crop(db: Session, cfg: Settings, camera_id: str, payload) -> bool:
     review = db.get(ReviewQueue, review_id) if review_id else None
     if review is None or review.status != "OPEN":
         log.warning("모르는·끝난 crop 응답 무시: %s", rid)
+        return False
+    if (rid != request_id_for(review.review_id) or payload.get("slot_id") != review.slot_id
+            or not review.read_plates or payload.get("event_id") != _review_event_id(review.read_plates)
+            or parse_time(payload.get("captured_at")) is None):
         return False
     slot = db.get(ParkingSlot, review.slot_id)
     if slot is None or slot.camera_id != camera_id:
@@ -319,7 +331,7 @@ def handle_crop(db: Session, cfg: Settings, camera_id: str, payload) -> bool:
         image = base64.b64decode(data, validate=True)
     except (binascii.Error, ValueError):
         return False
-    if not image.startswith(b"\xff\xd8") or len(image) > CROP_MAX_BYTES:
+    if not (image.startswith(b"\xff\xd8") and image.endswith(b"\xff\xd9")) or len(image) > CROP_MAX_BYTES:
         log.warning("JPEG가 아니거나 너무 큰 crop 무시: %s (%d bytes)", rid, len(image))
         return False
     folder = Path(cfg.crop_dir)

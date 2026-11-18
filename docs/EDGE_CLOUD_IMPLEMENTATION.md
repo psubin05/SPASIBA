@@ -1,5 +1,7 @@
 # SPASIBA Raspberry Pi Edge–Cloud 구현 기록
 
+> 이 문서는 통합 이전 Raspberry Pi 브랜치의 구현 기록이다. 현재 설정과 토픽은 [실행 가이드](RUN_INTEGRATION.md)와 [인터페이스 계약](INTERFACE_CONTRACT.md)을 따른다.
+
 작성일: 2026-11-18. 기준: 사용자 제공 SAD v1.2 및 인터페이스 v0.3.1(11/17).
 두 기준 문서 원본은 저장소에 없으므로 대화에 제공된 규격을 사용했다.
 새 브랜치명은 사용자의 최종 지시에 따라 **`raspberrypi`**다.

@@ -118,6 +118,8 @@ sha256sum -c MODEL_SHA256SUMS.txt
 
 ## 선택적 Edge–Cloud MQTT 연동
 
+Pi–Server v0.4 통합 실행은 [실행 가이드](docs/RUN_INTEGRATION.md)를 참고하세요.
+
 기존 OCR 단독 실행은 그대로 사용할 수 있습니다. SQLite 재전송 큐, 슬롯별 중복 방지,
 TLS/QoS 1 MQTT, LWT 상태, 선택적 crop 인터페이스를 추가했습니다.
 

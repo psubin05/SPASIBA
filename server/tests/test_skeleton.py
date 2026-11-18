@@ -7,7 +7,8 @@ def test_health(client):
 def test_planned_routes_exist_and_return_501(client):
     # 수꽝 관리자 확인(작업 9)은 나중에, 떵개(수빈) API는 수빈 앱과 합칠 때까지 501 자리만 둔다
     for method, path in [
-        ("get", "/admin/reviews"), ("post", "/admin/reviews/r1/resolve"),
+        ("get", "/admin/reviews"), ("get", "/admin/reviews/r1/crop"),
+        ("post", "/admin/reviews/r1/resolve"),
         ("get", "/qr/QR-B2-ENT1"), ("get", "/route?from=QR-B2-ENT1&to=B2-A-03"), ("get", "/map?floor=B2"),
     ]:
         r = getattr(client, method)(path)

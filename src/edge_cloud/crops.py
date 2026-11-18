@@ -33,6 +33,8 @@ class CropCache:
         if len(payload) > 4096:
             raise ValueError("crop request too large")
         request = json.loads(payload)
+        if not isinstance(request, dict):
+            raise ValueError("invalid crop request")
         for key in ('request_id', 'event_id', 'slot_id'):
             if not isinstance(request.get(key), str) or not 1 <= len(request[key]) <= 128:
                 raise ValueError("invalid crop request")

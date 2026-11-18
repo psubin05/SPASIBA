@@ -12,6 +12,8 @@ LOG = logging.getLogger(__name__)
 class EdgeRuntime:
     def __init__(self, config, network=True):
         self.config = config
+        if config.publish_on_consensus:
+            LOG.warning('DEMO: OCR consensus publication enabled without stopped-vehicle detection')
         self.store = Store(config.database, config.max_pending)
         self.resolver = SlotResolver(config)
         self.crops = CropCache(config.crop_ttl) if config.crop_enabled else None
@@ -25,15 +27,18 @@ class EdgeRuntime:
 
     def observe(self, pairs):
         candidates = {}
+        ambiguous = set()
         for result, track in pairs:
+            slots = self.resolver.candidates(result.get('bbox'))
+            if len(slots) != 1:
+                ambiguous.update(slots)
+                continue
             reading = consensus(track.readings, self.config.min_votes)
-            slot = self.resolver.resolve(result.get('bbox'))
-            if slot:
-                candidates.setdefault(slot, []).append((reading, result))
+            candidates.setdefault(slots[0], []).append((reading, result))
         emitted = []
         for slot, values in candidates.items():
             # Multiple visible tracks in a slot are ambiguous, even if text agrees.
-            if len(values) != 1:
+            if len(values) != 1 or slot in ambiguous:
                 continue
             state = self.store.occupancy(slot)
             if state == Occupancy.EMPTY or (state == Occupancy.UNKNOWN and not self.config.publish_on_consensus):

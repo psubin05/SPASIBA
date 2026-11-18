@@ -6,6 +6,7 @@ __pycache__/
 config/*.local.json
 .env
 .env.*
+!server/.env.example
 *.pem
 *.key
 *.crt

@@ -4,9 +4,9 @@ from datetime import datetime
 import re
 import unicodedata
 import uuid
-from postprocessing import REGIONS
+from postprocessing import FULLWIDTH_DIGITS, REGIONS, USE_CHARS
 
-PATTERN = re.compile(rf"(?:{'|'.join(REGIONS)})?[0-9]{{2,3}}[가-힣][0-9]{{4}}")
+PATTERN = re.compile(rf"(?:{'|'.join(REGIONS)})?[0-9]{{2,3}}[{USE_CHARS}][0-9]{{4}}")
 
 
 def now():
@@ -15,7 +15,7 @@ def now():
 
 def normalize_plate(text):
     text = unicodedata.normalize("NFC", text or "")
-    text = text.translate(str.maketrans("０１２３４５６７８９", "0123456789"))
+    text = text.translate(FULLWIDTH_DIGITS)
     return re.sub(r"[\s\-·]", "", text)
 
 
@@ -37,5 +37,5 @@ def make_event(config, slot, reading):
     if not PATTERN.fullmatch(plate) or not 1 <= votes <= frames <= 10:
         raise ValueError("invalid plate or votes")
     return dict(event_id=str(uuid.uuid4()), plate_number=plate,
-                camera_id=config.camera_id, zone_id=config.zone_id, slot_id=slot,
+                camera_id=config.camera_id, slot_id=slot,
                 recognized_at=now(), votes=votes, frames=frames, kind="confirm")

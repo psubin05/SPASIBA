@@ -16,7 +16,7 @@ from edge_cloud.crops import CropCache, jpeg_bytes
 class EdgeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.config = Config(zone_id='B2-A',camera_id='CAM-B2-A-01',database=self.temp.name+'/events.sqlite3',single_slot='B2-A-03',publish_on_consensus=True)
+        self.config = Config(zone_id='B2-A',camera_id='CAM-B2-01',database=self.temp.name+'/events.sqlite3',single_slot='B2-A-03',publish_on_consensus=True)
         self.runtime = EdgeRuntime(self.config,network=False)
     def tearDown(self):
         self.runtime.close()
@@ -53,6 +53,20 @@ class EdgeTests(unittest.TestCase):
         self.runtime.store.acknowledge(event['event_id'])
         self.assertEqual(self.runtime.store.count(),0)
         self.assertEqual(self.runtime.observe(self.pairs()),[])
+    def test_legacy_camera_outbox_is_retained(self):
+        from edge_cloud.transport import MQTTTransport
+        from unittest.mock import Mock
+
+        old_event = self.runtime.observe(self.pairs())[0]
+        self.config.host = '127.0.0.1'
+        self.config.tls = False
+        self.config.camera_id = 'CAM-B2-02'
+        client = Mock()
+        transport = MQTTTransport(self.config, self.runtime.store, client=client)
+        with self.assertRaisesRegex(ValueError, 'Outbox camera ID'):
+            transport.start()
+        client.connect_async.assert_not_called()
+        self.assertEqual(self.runtime.store.peek(), old_event)
     def test_explicit_empty_new_session(self):
         first=self.runtime.observe(self.pairs())[0]
         self.runtime.store.set_occupancy(self.config.single_slot,Occupancy.EMPTY)
@@ -89,9 +103,9 @@ class EdgeTests(unittest.TestCase):
         self.runtime.store.acknowledge(event['event_id'])
         self.assertEqual(len(self.runtime.observe(self.pairs('34나5678'))),1)
     def test_invalid_settings(self):
-        for kw in ({'port':0},{'host':'example.com','tls':False},{'min_votes':11},{'ca':'/not-found'},{'single_slot':'B1-A-03'},{'tls':'false'},{'status_topic':'spasiba/#'},{'rois':{'B2-A-03':[[0,0]]}}):
+        for kw in ({'port':0},{'host':'example.com','tls':False},{'min_votes':11},{'ca':'/not-found'},{'single_slot':'B1-A-3'},{'tls':'false'},{'camera_id':'CAM-B2-A-01'},{'rois':{'B2-A-03':[[0,0]]}}):
             with self.assertRaises(ValueError):
-                Config(**{**dict(zone_id='B2-A',camera_id='CAM-B2-A-01'),**kw})
+                Config(**{**dict(zone_id='B2-A',camera_id='CAM-B2-01'),**kw})
     def test_bad_config_keeps_ocr(self):
         with self.assertLogs('edge_cloud.runtime',level='ERROR'):
             self.assertIsNone(optional_runtime(SimpleNamespace(mqtt=True,edge_config='/missing')))

@@ -1,0 +1,17 @@
+# Use with docker-compose.yml (Docker Compose >= 2.24.4).
+services:
+  broker:
+    ports: !override
+      - "${MQTT_LAN_BIND_IP:?set MQTT_LAN_BIND_IP}:8883:8883"
+    volumes:
+      - ./mosquitto/mosquitto-tls.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/acl.example:/mosquitto/config/acl:ro
+      - ./mosquitto/tls.local:/mosquitto/tls:ro
+  api:
+    environment:
+      MQTT_HOST: broker
+      MQTT_PORT: "8883"
+      MQTT_TLS: "true"
+      MQTT_CA: /run/mqtt/ca.crt
+    volumes:
+      - ./mosquitto/tls.local/ca.crt:/run/mqtt/ca.crt:ro

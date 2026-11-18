@@ -23,11 +23,14 @@ class SlotResolver:
     def __init__(self, config):
         self.config = config
 
-    def resolve(self, bbox):
+    def candidates(self, bbox):
         if self.config.single_slot:
-            return self.config.single_slot
+            return [self.config.single_slot]
         if not bbox or len(bbox) != 4:
-            return None
+            return []
         point = ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2)
-        matches = [slot for slot, polygon in self.config.rois.items() if contains(polygon, point)]
+        return [slot for slot, polygon in self.config.rois.items() if contains(polygon, point)]
+
+    def resolve(self, bbox):
+        matches = self.candidates(bbox)
         return matches[0] if len(matches) == 1 else None

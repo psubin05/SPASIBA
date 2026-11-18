@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
+from app.identifiers import CAMERA_ID_RE, SLOT_ID_RE
 from tools.fake_pi_messages import is_valid_plate
 
 SCENARIO_DIR = Path(__file__).parent / "scenarios"
 STEP_TYPES = {"event", "wait", "status", "disconnect"}
-SLOT_RE = re.compile(r"[A-Za-z0-9]+-[A-Za-z0-9]+-[0-9]{2}")  # {zone_id}-{번호2자리}
 
 
 class ScenarioError(ValueError):
@@ -51,6 +50,8 @@ def validate_scenario(sc: dict) -> None:
     for cam in sc["cameras"]:
         if not isinstance(cam, dict) or not isinstance(cam.get("camera_id"), str):
             raise ScenarioError(f"cameras 항목에 camera_id 필요: {cam!r}")
+        if not CAMERA_ID_RE.fullmatch(cam["camera_id"]):
+            raise ScenarioError(f"camera_id 형식 오류: {cam['camera_id']!r}")
         cameras.add(cam["camera_id"])
     if not cameras:
         raise ScenarioError("cameras가 비어 있음")
@@ -95,7 +96,7 @@ def validate_scenario(sc: dict) -> None:
 
         if kind == "event":
             slot_id = step.get("slot_id")
-            if not isinstance(slot_id, str) or not SLOT_RE.fullmatch(slot_id):
+            if not isinstance(slot_id, str) or not SLOT_ID_RE.fullmatch(slot_id):
                 raise ScenarioError(f"{where}: slot_id {slot_id!r} 형식 오류 ({{zone_id}}-{{번호2자리}})")
             _check_plate(step.get("plate_number"), where, bool(step.get("expect_invalid")))
             ref = step.get("event_ref")

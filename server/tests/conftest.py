@@ -14,6 +14,7 @@ def settings(tmp_path):
         mqtt_username=None, mqtt_password=None, mqtt_tls=False,
         admin_token="test-token", timezone="Asia/Seoul",
         crop_dir=str(tmp_path / "crops"),
+        crop_enabled=True,
     )
 
 

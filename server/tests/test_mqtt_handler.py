@@ -9,7 +9,7 @@ from app.mqtt_listener import SUBSCRIPTIONS, MessageHandler
 
 KST = timezone(timedelta(hours=9))
 T0 = datetime(2026, 11, 18, 14, 0, 0, tzinfo=KST)
-CAM = "CAM-B2-A-01"
+CAM = "CAM-B2-01"
 
 
 def _handler(app_client):

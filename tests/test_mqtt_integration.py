@@ -57,7 +57,7 @@ class MQTTIntegrationTests(unittest.TestCase):
         self.observer.on_subscribe=lambda *args:subscribed.append(True)
         self.observer.subscribe('spasiba/#',qos=1)
         wait_until(lambda:subscribed)
-        self.config=Config(zone_id='B2-A',camera_id='CAM-B2-A-01',host='localhost',port=self.port,ca=str(self.cert),database=str(self.root/'events.sqlite3'),single_slot='B2-A-03',publish_on_consensus=True)
+        self.config=Config(zone_id='B2-A',camera_id='CAM-B2-01',host='localhost',port=self.port,ca=str(self.cert),database=str(self.root/'events.sqlite3'),single_slot='B2-A-03',publish_on_consensus=True)
         self.runtime=None
     def start_broker(self):
         self.broker=subprocess.Popen([BROKER,'-c',str(self.conf)],stdout=self.log,stderr=self.log)

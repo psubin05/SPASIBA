@@ -89,7 +89,7 @@ def _assign(session_id, slot_id="B2-A-03", **kw) -> SlotAssignment:
 
 def _event(event_id="e1", slot_id="B2-A-03", zone_id="B2-A", recognized_at=T0, **kw) -> ParkingEvent:
     return ParkingEvent(event_id=event_id, plate_number="12가3456", plate_norm="12가3456",
-                        camera_id="CAM-B2-A-01", zone_id=zone_id, slot_id=slot_id,
+                        camera_id="CAM-B2-01", zone_id=zone_id, slot_id=slot_id,
                         recognized_at=recognized_at, **kw)
 
 

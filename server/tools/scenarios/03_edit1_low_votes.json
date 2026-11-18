@@ -3,7 +3,7 @@
   "description": "한 글자 틀린 인식이지만 votes 3(<5) → 확정하지 않고 보류되는지",
   "cameras": [
     {
-      "camera_id": "CAM-B2-A-01"
+      "camera_id": "CAM-B2-01"
     }
   ],
   "entries": [
@@ -14,7 +14,7 @@
   "steps": [
     {
       "type": "event",
-      "camera_id": "CAM-B2-A-01",
+      "camera_id": "CAM-B2-01",
       "slot_id": "B2-A-03",
       "plate_number": "12가3458",
       "votes": 3,

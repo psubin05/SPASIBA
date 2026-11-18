@@ -1,0 +1,12 @@
+{
+  "camera_id": "CAM-B2-01",
+  "host": "",
+  "port": 8883,
+  "tls": true,
+  "database": "outputs/edge-v04-demo/events.sqlite3",
+  "single_slot": "B2-A-03",
+  "min_votes": 5,
+  "publish_on_consensus": true,
+  "crop_enabled": false,
+  "crop_ttl": 600
+}
