@@ -32,7 +32,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         database.create_all()
         if settings.seed_sample_map:
-            seed_sample(database)
+            seed_sample(database, settings.map_file)
         try:
             mqtt.start()
             yield

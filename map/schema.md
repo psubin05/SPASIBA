@@ -25,3 +25,13 @@ PostgreSQL 스키마와 SQL 생성 도구는 db/ 및 tools/export_map_sql.py에 
 `demo_layout`은 시뮬레이터 전용 board/aisle/walls/camera_mounts 정보다.
 3D의 바닥 좌표는 지도 x/y와 동일하고 z는 위쪽 높이다.
 카메라는 A/B별 기존 임시 위치를 유지하며 coverage/FOV를 계산하지 않는다.
+
+## 11/18 회의 배치 (`b2_layout_1118.json`)
+
+- 회의 정리본(`docs/figures/parking_layout_2026-11-18.jpg`)을 옮긴 18칸 지도. `python -m tools.make_layout_1118`로 생성하며,
+  손으로 고치지 말고 스크립트의 치수를 고쳐 다시 만든다 (`tests/test_layout_1118.py`가 파일과 스크립트 결과를 대조).
+- 구역 3개(`B2-A`, `B2-B`, `B2-C`), 카메라 `CAM-B2-01`(A, 왼쪽 벽)·`CAM-B2-02`(B, 오른쪽 벽)·`CAM-B2-03`(C, 제안 위치).
+  B-2 칸 번호는 그림대로 05~07이며 04 누락 여부는 확인 필요.
+- 보행로: 위쪽 인도, 블록 둘레 인도, 횡단보도 6개(블록 모서리에서 건넘). QR은 `QR-B2-ENT1`(왼쪽 사람 입구), `QR-B2-ENT2`(아래 QR 입구).
+- `demo_layout`에 `aisles`(도로 여러 개), `sidewalks`, `crosswalks`, `gates`, `entry_camera`, `title`을 추가했다. 없으면 예전처럼 `aisle` 하나만 그린다.
+- 서버에서 쓰려면 환경변수 `MAP_FILE=map/b2_layout_1118.json`(기본 `map/b2.json`), 빈 DB에 `SEED_SAMPLE_MAP=true`.

@@ -35,15 +35,21 @@ function draw(){
   faces=[];labels=[];ctx.clearRect(0,0,width,height);
   const b=layout.board;
   box(b.x,b.y,b.width,b.depth,-.35,.35,'#dedac9');
-  const aisle=layout.aisle;plane(aisle.x,aisle.y,aisle.width,aisle.depth,.015,'#c9cebf');
-  for(let x=aisle.x+.4;x<aisle.x+aisle.width;x+=1.2)plane(x,aisle.y+aisle.depth/2-.025,.55,.05,.025,'#edf0e5');
+  for(const s of layout.sidewalks||[])plane(s.x,s.y,s.width,s.depth,.01,'#cfe3ef');
+  for(const a of layout.aisles||[layout.aisle]){plane(a.x,a.y,a.width,a.depth,.015,'#c9cebf');
+    if(a.width>=a.depth)for(let x=a.x+.4;x<a.x+a.width;x+=1.2)plane(x,a.y+a.depth/2-.025,.55,.05,.025,'#edf0e5');
+    else for(let y=a.y+.4;y<a.y+a.depth;y+=1.2)plane(a.x+a.width/2-.025,y,.05,.55,.025,'#edf0e5');}
+  for(const c of layout.crosswalks||[]){if(c.width<c.depth)for(let y=c.y+.15;y<c.y+c.depth-.1;y+=.45)plane(c.x,y,c.width,.22,.03,'#f7f7f2');
+    else for(let x=c.x+.15;x<c.x+c.width-.1;x+=.45)plane(x,c.y,.22,c.depth,.03,'#f7f7f2');}
+  for(const g of layout.gates||[])text(g.label,g.x,g.y,.3,'#9a3b2b',14);
   for(const wall of layout.walls)box(wall.x,wall.y,wall.width,wall.depth,0,wall.height,'#e4e0d2');
   map.slots.forEach((slot,i)=>{
     const p=slot.polygon, xs=p.map(v=>v[0]),ys=p.map(v=>v[1]);
     const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,d=Math.max(...ys)-y;
     const selected=slot.slot_id===$('destination').value;
     plane(x,y,w,d,.03,selected?'#f3dbb9':'#e2e6da','#fdfbf1');
-    const n=nodes[slot.node_id];text(slot.name,n.x,n.y,.15,selected?'#a65c21':'#4f6453',12);
+    const [main,...rest]=String(slot.name).split(' '),labelColor=selected?'#a65c21':'#4f6453';
+    text(main,x+w/2,y+d*(rest.length?.42:.5),.15,labelColor,12);if(rest.length)text(rest.join(' '),x+w/2,y+d*.72,.15,labelColor,10);
     if(occupied.has(slot.slot_id)){
       const cx=x+w/2,cy=y+d/2;
       box(cx-w*.31,cy-d*.34,w*.62,d*.68,.06,.38,colors[i]);
@@ -53,6 +59,7 @@ function draw(){
     }
   });
   for(const qr of qrs){const n=nodes[qr.node_id];box(n.x-.18,n.y-.18,.36,.36,0,.7,'#38755d');text('QR',n.x,n.y,.9,'#205640',13);}
+  const entryCam=layout.entry_camera;if(entryCam&&$('showCameras').checked){box(entryCam.x-.05,entryCam.y-.05,.1,.1,0,entryCam.height,'#748b96');box(entryCam.x-.22,entryCam.y-.14,.44,.28,entryCam.height,.2,'#8a6fb0');text(entryCam.label,entryCam.x,entryCam.y,entryCam.height+.5,'#5d4787',10);}
   if($('showCameras').checked)for(const camera of layout.camera_mounts){
     box(camera.x-.05,camera.y-.05,.1,.1,0,camera.height,'#748b96');
     box(camera.x-.25,camera.y-.16,.5,.32,camera.height,.23,'#4e82ab');
@@ -120,7 +127,7 @@ $('exitVehicle').onclick=()=>operatorAction($('exitVehicle'),async()=>{await pos
 $('searchVehicle').onclick=async()=>{if(operatorBusy)return;clearRoute();const version=requestVersion;$('searchVehicle').disabled=true;status('차량 위치를 검색하고 있습니다.');try{const vehicle=await api('/vehicles/'+encodeURIComponent($('searchPlate').value)+'/last-location');if(version!==requestVersion)return;if(vehicle.status==='PENDING'){status(vehicle.message||'주차 위치를 확인하고 있습니다.');$('metrics').textContent='위치 확인 중';return;}if(vehicle.status!=='CONFIRMED'||!map.slots.some(s=>s.slot_id===vehicle.slot_id))throw Error('안내 가능한 주차면이 없습니다.');$('destination').value=vehicle.slot_id;await calculate();if(result?.to_slot===vehicle.slot_id)showVehicle(vehicle);}catch(error){if(version===requestVersion){status(error.message,true);$('metrics').textContent='경로 안내 대기';}}finally{$('searchVehicle').disabled=operatorBusy;}};
 $('boardWidth').oninput=()=>{if(layout)dimensions();};$('showCameras').onchange=draw;$('export').onclick=exportPlan;
 new ResizeObserver(resize).observe(canvas);
-(async()=>{try{const [data,meta]=await Promise.all([api('/map?floor=B2'),api('/simulator/layout')]);map=data;layout=meta.layout;qrs=meta.qr_locations;demoEnabled=!!meta.demo_enabled;vehicleApiEnabled=demoEnabled||!!meta.vehicle_api_enabled;sharedBackend=meta.matching_backend==='shared';nodes=Object.fromEntries(map.nodes.map(n=>[n.node_id,n]));
+(async()=>{try{const [data,meta]=await Promise.all([api('/map?floor=B2'),api('/simulator/layout')]);map=data;layout=meta.layout;if(layout.title)$('layoutTitle').textContent=layout.title;qrs=meta.qr_locations;demoEnabled=!!meta.demo_enabled;vehicleApiEnabled=demoEnabled||!!meta.vehicle_api_enabled;sharedBackend=meta.matching_backend==='shared';nodes=Object.fromEntries(map.nodes.map(n=>[n.node_id,n]));
   for(const qr of qrs){const option=new Option(qr.name,qr.location_id);$('origin').add(option);}
   for(const slot of map.slots){$('destination').add(new Option(slot.name,slot.slot_id));const label=document.createElement('label');label.className='check';const input=document.createElement('input');input.type='checkbox';input.checked=occupied.has(slot.slot_id);input.disabled=demoEnabled;occupancyInputs.set(slot.slot_id,input);input.onchange=()=>{input.checked?occupied.add(slot.slot_id):occupied.delete(slot.slot_id);draw();};label.append(input,document.createTextNode(slot.name));$('occupancy').append(label);}
   $('destination').value='B2-A-03';const locationId=new URLSearchParams(window.location.search).get('location_id');if(locationId&&!qrs.some(q=>q.location_id===locationId))throw Error('QR 위치가 없습니다. QR을 다시 스캔해주세요.');if(locationId)$('origin').value=locationId;updateQrLink();dimensions();resize();$('calculate').disabled=false;

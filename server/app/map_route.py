@@ -113,6 +113,6 @@ def route(data, location_id, slot_id, *, cache=None):
         steps.append(f'{straight:g}m 직진')
     steps.append(f'{slot["name"]} 도착')
     return {'from': location_id, 'to_slot': slot_id, 'floor': data['floor'],
-            'distance_m': distance,
+            'distance_m': round(distance, 2),  # 소수 합 오차(16.900000000000002) 제거
             'path': [{'node': n, 'x': nodes[n]['x'], 'y': nodes[n]['y']} for n in path],
             'steps': steps}

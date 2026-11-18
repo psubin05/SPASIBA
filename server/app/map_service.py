@@ -12,13 +12,21 @@ ROOT = Path(__file__).resolve().parents[2]
 SAMPLE = ROOT / 'map/b2.json'
 
 
-def sample_data():
-    return json.loads(SAMPLE.read_text(encoding='utf-8'))
+def map_path(map_file=None) -> Path:
+    """설정의 MAP_FILE(저장소 기준 상대 경로 또는 절대 경로). 없으면 map/b2.json."""
+    if not map_file:
+        return SAMPLE
+    path = Path(map_file)
+    return path if path.is_absolute() else ROOT / path
 
 
-def seed_sample(database):
+def sample_data(map_file=None):
+    return json.loads(map_path(map_file).read_text(encoding='utf-8'))
+
+
+def seed_sample(database, map_file=None):
     """Explicit opt-in, empty DB only. Never overwrite a team's existing map."""
-    data = sample_data()
+    data = sample_data(map_file)
     validate_map(data)
     with database.SessionLocal() as db:
         models = (Zone, Camera, MapNode, MapEdge, ParkingSlot, QrLocation)

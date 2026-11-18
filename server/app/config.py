@@ -28,6 +28,7 @@ class Settings:
 
     simulator_enabled: bool = False
     seed_sample_map: bool = False
+    map_file: str = "map/b2.json"     # 시드·시뮬레이터 배치에 쓸 지도 (저장소 기준 상대 경로). 11/18 배치: map/b2_layout_1118.json
     mqtt_ca_cert: str | None = None
 
     @classmethod
@@ -35,6 +36,7 @@ class Settings:
         return cls(
             simulator_enabled=_bool(os.getenv("SIMULATOR_ENABLED"), False),
             seed_sample_map=_bool(os.getenv("SEED_SAMPLE_MAP"), False),
+            map_file=os.getenv("MAP_FILE") or "map/b2.json",
             mqtt_ca_cert=os.getenv('MQTT_CA_CERT') or None,
             database_url=os.getenv("DATABASE_URL", "sqlite:///./spasiba_dev.db"),
             mqtt_enabled=_bool(os.getenv("MQTT_ENABLED"), False),

@@ -34,13 +34,17 @@ def validate_demo_layout(data):
     for mount in mounts:
         if mount['camera_id'] not in cameras or not inside(mount['x'], mount['y']) or not math.isfinite(mount['height']) or mount['height'] <= 0:
             raise ValueError('Invalid camera mount')
-    for shape in [layout['aisle'], *layout['walls']]:
+    for shape in [layout['aisle'], *layout['walls'], *layout.get('aisles', []), *layout.get('sidewalks', []),
+                  *layout.get('crosswalks', [])]:
         if any(not math.isfinite(shape[k]) for k in ('x', 'y', 'width', 'depth')) or shape['width'] <= 0 or shape['depth'] <= 0:
             raise ValueError('Invalid board geometry')
         if not inside(shape['x'], shape['y']) or not inside(shape['x'] + shape['width'], shape['y'] + shape['depth']):
             raise ValueError('Geometry is outside the board')
         if 'height' in shape and (not math.isfinite(shape['height']) or shape['height'] < 0):
             raise ValueError('Invalid wall height')
+    for point in [*layout.get('gates', []), *([layout['entry_camera']] if layout.get('entry_camera') else [])]:
+        if not inside(point['x'], point['y']):
+            raise ValueError('Marker is outside the board')
 
 
 class MapStore:

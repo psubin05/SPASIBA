@@ -46,7 +46,7 @@ def simulator():
 @router.get('/simulator/layout', include_in_schema=False)
 def simulator_layout(request: Request, floor: str = 'B2', db: Session = Depends(get_db)):
     data = read_map(db, floor)
-    sample = sample_data()
+    sample = sample_data(request.app.state.settings.map_file)
     # Decorative sample geometry is only offered for the matching sample floor.
     expected = {s['slot_id']:s for s in sample['slots']}
     expected_nodes = {n['node_id']:(n['x'],n['y']) for n in sample['nodes']}
